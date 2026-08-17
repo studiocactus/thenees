@@ -1,0 +1,29 @@
+.player-birthday-options {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.player-birthday-options label {
+  min-height: 48px;
+  padding: 12px;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  border: 1px solid #111216;
+  background: #e7e7e1;
+  line-height: 1.5;
+}
+
+.player-birthday-options input {
+  flex: 0 0 16px !important;
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0;
+  accent-color: #7567ff;
+}
+
+@media (max-width: 900px) {
+  .player-birthday-options { grid-template-columns: 1fr; }
+}

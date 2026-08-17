@@ -1,0 +1,17 @@
+.control-login form .control-recovery {
+  margin-top: 10px;
+  background: transparent;
+  color: #f4f4ef;
+  border: 1px solid #515158;
+  box-shadow: none;
+}
+
+.control-login form .control-recovery:hover {
+  color: #0b0b0d;
+  background: #7567ff;
+  border-color: #7567ff;
+}
+
+.control-password-page .control-login > p {
+  max-width: 540px;
+}

@@ -1,0 +1,9 @@
+/* Pixel text must remain legible on desktop and mobile displays. */
+.player-shell small,
+.player-shell button,
+.player-panel-heading span,
+.player-connections header,
+.player-connections article b {
+  font-size: 9px !important;
+  line-height: 1.5;
+}

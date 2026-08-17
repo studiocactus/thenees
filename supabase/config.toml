@@ -1,0 +1,19 @@
+project_id = "ilvdxbqrjsmaqoongwkw"
+
+[functions.twitch-oauth-start]
+verify_jwt = true
+
+[functions.twitch-oauth-callback]
+verify_jwt = false
+
+[functions.twitch-eventsub]
+verify_jwt = false
+
+[functions.twitch-subscribe]
+verify_jwt = true
+
+[functions.twitch-worker]
+verify_jwt = false
+
+[functions.platform-disconnect]
+verify_jwt = true
