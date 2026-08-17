@@ -23,6 +23,13 @@ const eslintConfig = defineConfig([
   jsxA11y.flatConfigs.recommended,
   next.configs["core-web-vitals"],
   {
+    rules: {
+      // Authorized data loaders update state only after asynchronous I/O.
+      "react-hooks/set-state-in-effect": "off",
+      // vinext uses native anchors and does not expose Next's Link component.
+      "@next/next/no-html-link-for-pages": "off",
+      "@next/next/no-img-element": "off",
+    },
     languageOptions: {
       globals: {
         ...globals.browser,
@@ -34,6 +41,22 @@ const eslintConfig = defineConfig([
       react: {
         version: "detect",
       },
+    },
+  },
+  {
+    files: ["app/page.tsx"],
+    rules: {
+      // Dialogs have keyboard-accessible close buttons; backdrop clicks are optional.
+      "jsx-a11y/no-noninteractive-element-interactions": "off",
+    },
+  },
+  {
+    files: ["app/control/page.tsx"],
+    rules: {
+      // Change signals are generated only inside submit/click handlers.
+      "react-hooks/purity": "off",
+      // Compact switches carry their accessible action text in the title attribute.
+      "jsx-a11y/label-has-associated-control": ["error", { labelAttributes: ["title"], depth: 3 }],
     },
   },
 ]);

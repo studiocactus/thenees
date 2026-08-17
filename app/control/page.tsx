@@ -36,17 +36,6 @@ const defaultProfileItems: ProfileItem[] = [
   ["music","MÚSICA PREFERIDA","WITHOUT YOU","AVICII / SPOTIFY ↗","https://open.spotify.com/intl-pt/track/6Pgkp4qUoTmJIPn7ReaGxL?si=18d6bc45a881405f"], ["food","COMIDA","STROGONOFF DE FRANGO","BUFF DE ENERGIA FAVORITO",null], ["place","LUGAR","JAPÃO","PONTO DE SPAWN IDEAL",null], ["dream","SONHO","CONHECER O JAPÃO","MISSÃO PRINCIPAL",null], ["work","O QUE EU FAÇO","DIRETOR DE ARTE / STREAMER","CLASSE PROFISSIONAL",null], ["game","JOGO FAVORITO","ROCK N’ ROLL RACING","MEGA DRIVE / RESPONSÁVEL POR BOA PARTE DA PERSONALIDADE",null], ["skill","SKILL PRINCIPAL","DEITAR SEM SONO","HABILIDADE REALMENTE ÚTIL",null], ["project","PROJETO ATUAL","SER UM STREAMER MELHOR","QUEST ATIVA",null], ["fuel","COMBUSTÍVEL CRIATIVO","CONTATO HUMANO","RECURSO CONSUMIDO EM QUANTIDADES DUVIDOSAS",null], ["hobby","HOBBY FORA DA TELA","MTB","MODO OFFLINE",null], ["defect","DEFEITO DE FÁBRICA","DURMO POUCO","BUG CONHECIDO, PATCH NÃO PREVISTO",null], ["rule","REGRA PESSOAL","NÃO DESISTIR ATÉ CONSEGUIR","CÓDIGO-FONTE MORAL",null],
 ].map(([item_key,label,value,helper_text,link_url],index) => ({ item_key:item_key as string,label:label as string,value:value as string,helper_text:helper_text as string,link_url:link_url as string|null,sort_order:index+1,active:true }));
 
-const modules = [
-  ["01", "CONTEÚDO DO SITE", "Hero, perfil, textos e links oficiais"],
-  ["02", "AGENDA", "Horários, jogos, títulos e plataformas"],
-  ["03", "VÍDEOS", "Destaques editoriais e capas"],
-  ["04", "COMUNIDADE", "Métricas, quotes e aniversários"],
-  ["05", "CHATBATTLE", "Nome, incentivos e regras do game"],
-  ["06", "NEESBOT", "Eventos, mensagens e integrações"],
-  ["07", "MEDIA KIT", "Métricas e formatos comerciais"],
-  ["08", "MENSAGENS", "Contatos recebidos pelo site"],
-] as const;
-
 const navigationGroups = [
   { number: "00", title: "DASHBOARD", items: [["01", "VISÃO GERAL"]] },
   { number: "01", title: "CONTEÚDO DO SITE", items: [["01", "VISÃO GERAL"], ["02", "PÁGINAS E TEXTOS"], ["03", "AGENDA E VÍDEOS"], ["04", "LINKS OFICIAIS"]] },
@@ -387,19 +376,19 @@ export default function ControlPage() {
     if(accessState!=="authorized"||!botChannels.length)return;
     const supabase=getSupabaseBrowserClient();
     void Promise.all(botChannels.map((item)=>supabase.from("bot_channels").update({enabled:item.enabled,connection_status:item.enabled?"configured":"disconnected",updated_at:new Date().toISOString()}).eq("platform",item.platform))).then((results)=>setBotSaveState(results.some(({error})=>error)?"error":"saved"));
-  },[channelStatusSignature,accessState]);
+  },[channelStatusSignature,accessState,botChannels]);
 
   useEffect(()=>{
     if(accessState!=="authorized"||!botCommands.length)return;
     const supabase=getSupabaseBrowserClient();
     void Promise.all(botCommands.map((item)=>supabase.from("bot_commands").update({enabled:item.enabled,updated_at:new Date().toISOString()}).eq("id",item.id))).then((results)=>setBotSaveState(results.some(({error})=>error)?"error":"saved"));
-  },[commandStatusSignature,accessState]);
+  },[commandStatusSignature,accessState,botCommands]);
 
   useEffect(()=>{
     if(accessState!=="authorized"||!botAutomations.length)return;
     const supabase=getSupabaseBrowserClient();
     void Promise.all(botAutomations.map((item)=>supabase.from("bot_automations").update({enabled:item.enabled,include_site_link:item.include_site_link,updated_at:new Date().toISOString()}).eq("event_key",item.event_key))).then((results)=>setBotSaveState(results.some(({error})=>error)?"error":"saved"));
-  },[automationStatusSignature,accessState]);
+  },[automationStatusSignature,accessState,botAutomations]);
 
   const loadIntegrations = async () => {
     const {data}=await getSupabaseBrowserClient().from("platform_integrations").select("platform,status,channel_login,external_user_id,display_name,scopes,eventsub_status,last_synced_at,last_error").order("platform");
@@ -438,13 +427,13 @@ export default function ControlPage() {
   };
 
   const notifyLiveContentChange = () => {
-    const changedAt=Date.now().toString();
+    const changedAt=crypto.randomUUID();
     window.localStorage.setItem("thenees-live-content-updated",changedAt);
     if("BroadcastChannel" in window){const channel=new BroadcastChannel("thenees-live-content");channel.postMessage(changedAt);channel.close();}
   };
 
   const notifyCommunityContentChange=()=>{
-    const changedAt=Date.now().toString();
+    const changedAt=crypto.randomUUID();
     window.localStorage.setItem("thenees-community-content-updated",changedAt);
     if("BroadcastChannel" in window){const channel=new BroadcastChannel("thenees-community-content");channel.postMessage(changedAt);channel.close();}
   };
@@ -518,7 +507,7 @@ export default function ControlPage() {
 
   const handleMetricsSave = async (event:FormEvent<HTMLFormElement>) => {
     event.preventDefault(); setCommunitySaveState("saving");
-    const payload = communityMetrics.map(({updated_at,...item}) => ({...item,helper_text:item.helper_text||null,updated_at:new Date().toISOString()}));
+    const payload = communityMetrics.map((item) => ({id:item.id,metric_key:item.metric_key,label:item.label,value:item.value,helper_text:item.helper_text||null,source:item.source,is_public:item.is_public,updated_at:new Date().toISOString()}));
     const { error } = await getSupabaseBrowserClient().from("community_metrics").upsert(payload,{onConflict:"metric_key"});
     setCommunitySaveState(error?"error":"saved");
     if(!error)notifyCommunityContentChange();
@@ -529,12 +518,6 @@ export default function ControlPage() {
     const payload = {...quoteDraft,quoted_at:saoPauloDateTimeInputToIso(quoteDraft.quoted_at),approved:quoteDraft.status==="approved",bot_announced_at:quoteDraft.status==="approved"?new Date().toISOString():null};
     const { error } = await getSupabaseBrowserClient().from("community_quotes").insert(payload);
     if (error) setCommunitySaveState("error"); else { setQuoteDraft({...quoteDraft,quote_text:"",author_name:"",quoted_at:formatSaoPauloDateTimeInput(new Date())});setCommunitySaveState("saved");notifyCommunityContentChange();await loadCommunity(); }
-  };
-
-  const updateQuoteStatus = async (quote:CommunityQuote,status:CommunityQuote["status"]) => {
-    setCommunitySaveState("saving");
-    const { error } = await getSupabaseBrowserClient().from("community_quotes").update({status,approved:status==="approved",bot_announced_at:status==="approved"?(quote.bot_announced_at??new Date().toISOString()):quote.bot_announced_at}).eq("id",quote.id);
-    if (error) setCommunitySaveState("error"); else { setCommunitySaveState("saved");notifyCommunityContentChange();await loadCommunity(); }
   };
 
   const saveQuote = async (quote:CommunityQuote) => {
@@ -579,23 +562,6 @@ export default function ControlPage() {
       supabase.from("bot_automations").upsert(botAutomations.map((item)=>({...item,label:normalizeUtf8Text(item.label),message_template:normalizeUtf8Text(item.message_template),updated_at:new Date().toISOString()}))),
     ]);
     setBotSaveState(channels.error||commands.error||automations.error?"error":"saved");
-  };
-
-  const updateBotCommandStatus = async (command:BotCommand, enabled:boolean) => {
-    setBotCommands((items)=>items.map((item)=>item.id===command.id?{...item,enabled}:item));
-    setBotSaveState("saving");
-    const {error}=await getSupabaseBrowserClient().from("bot_commands").update({enabled,updated_at:new Date().toISOString()}).eq("id",command.id);
-    if(error){setBotCommands((items)=>items.map((item)=>item.id===command.id?{...item,enabled:command.enabled}:item));setBotSaveState("error");}
-    else setBotSaveState("saved");
-  };
-
-  const updateBotChannelStatus = async (channel:BotChannel, enabled:boolean) => {
-    const nextStatus:BotChannel["connection_status"]=enabled?"configured":"disconnected";
-    setBotChannels((items)=>items.map((item)=>item.platform===channel.platform?{...item,enabled,connection_status:nextStatus}:item));
-    setBotSaveState("saving");
-    const {error}=await getSupabaseBrowserClient().from("bot_channels").update({enabled,connection_status:nextStatus,updated_at:new Date().toISOString()}).eq("platform",channel.platform);
-    if(error){setBotChannels((items)=>items.map((item)=>item.platform===channel.platform?channel:item));setBotSaveState("error");}
-    else setBotSaveState("saved");
   };
 
   const updateAutomationOption = async (automation:BotAutomation, field:"enabled"|"include_site_link", value:boolean) => {
@@ -674,12 +640,6 @@ export default function ControlPage() {
     const { error } = await getSupabaseBrowserClient().from("admin_users").update({ ...changes,updated_at:new Date().toISOString() }).eq("user_id",member.user_id);
     setTeamMessage(error ? "NÃO FOI POSSÍVEL ATUALIZAR O ACESSO." : "ACESSO ATUALIZADO.");
     if (!error) await loadTeam();
-  };
-
-  const closeInvite=async(invite:TeamInvite)=>{
-    setTeamMessage("ENCERRANDO CONVITE...");
-    const {error}=await getSupabaseBrowserClient().from("admin_invites").update({active:false}).eq("id",invite.id);
-    if(error)setTeamMessage("NÃO FOI POSSÍVEL ENCERRAR O CONVITE.");else{setTeamMessage("CONVITE ENCERRADO.");await loadTeam();}
   };
 
   const handleSignOut = async () => {

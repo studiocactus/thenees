@@ -105,9 +105,6 @@ const adminQuotesPreview = [
 type AsciiParticle = { x: number; y: number; char: string; alpha: number; seed: number };
 type BrazilDate = { year: number; month: number; day: number; weekDay: number };
 
-const shortDays = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
-const fullDays = ["DOMINGO", "SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"];
-
 function getBrazilDate(date: Date): BrazilDate {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Sao_Paulo", year: "numeric", month: "numeric", day: "numeric",
@@ -117,11 +114,6 @@ function getBrazilDate(date: Date): BrazilDate {
   const month = value("month");
   const day = value("day");
   return { year, month, day, weekDay: new Date(Date.UTC(year, month - 1, day, 12)).getUTCDay() };
-}
-
-function addBrazilCalendarDays(date: BrazilDate, amount: number): BrazilDate {
-  const shifted = new Date(Date.UTC(date.year, date.month - 1, date.day + amount, 12));
-  return { year: shifted.getUTCFullYear(), month: shifted.getUTCMonth() + 1, day: shifted.getUTCDate(), weekDay: shifted.getUTCDay() };
 }
 
 const formatBrazilDay = (date: BrazilDate) => `${String(date.day).padStart(2, "0")}/${String(date.month).padStart(2, "0")}`;
@@ -189,7 +181,7 @@ export default function Home() {
         const current=payload.current;
         if(!current||typeof current.temperature_2m!=="number"||typeof current.weather_code!=="number")throw new Error("weather_invalid");
         setSantosWeather({temperature:Math.round(current.temperature_2m),...describeSantosWeather(current.weather_code,current.is_day===1)});
-      }catch(error){if(!controller.signal.aborted)setSantosWeather({temperature:null,label:"CLIMA INDISPONÍVEL",icon:"cloud"});}
+      }catch{if(!controller.signal.aborted)setSantosWeather({temperature:null,label:"CLIMA INDISPONÍVEL",icon:"cloud"});}
     };
     void loadWeather();
     const timer=window.setInterval(()=>void loadWeather(),15*60*1000);

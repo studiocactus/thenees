@@ -1,0 +1,30 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "thenees-prototype",
+  "compatibility_date": "2026-05-22",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": false,
+  "main": "./worker/index.ts",
+  "routes": [
+    {
+      "pattern": "thenees.com.br",
+      "zone_name": "thenees.com.br",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.thenees.com.br",
+      "zone_name": "thenees.com.br",
+      "custom_domain": true
+    }
+  ],
+  "assets": {
+    "directory": "dist/client",
+    "not_found_handling": "none",
+    "binding": "ASSETS"
+  },
+  "cache": {
+    "enabled": true
+  }
+}
