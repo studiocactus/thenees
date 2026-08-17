@@ -10,6 +10,22 @@ const safeEqual = (left: string, right: string) => {
   return result === 0;
 };
 
+type TwitchBadge = { set_id?: string };
+type TwitchEvent = {
+  message: { text?: string };
+  badges?: TwitchBadge[];
+  broadcaster_user_id: string;
+  chatter_user_id: string;
+  chatter_user_login: string;
+  chatter_user_name: string;
+  message_id: string;
+  user_login: string;
+  tier: string;
+  bits: number;
+  id: string;
+  [key: string]: unknown;
+};
+
 async function verifySignature(request: Request, rawBody: string) {
   const id = request.headers.get("twitch-eventsub-message-id") ?? "";
   const timestamp = request.headers.get("twitch-eventsub-message-timestamp") ?? "";
@@ -22,7 +38,7 @@ async function verifySignature(request: Request, rawBody: string) {
   return safeEqual(signature, received);
 }
 
-async function handleCommand(event: Record<string, any>) {
+async function handleCommand(event: TwitchEvent) {
   const text = String(event.message?.text ?? "").trim();
   if (!text.startsWith("!")) return;
   const [commandName, ...argumentsList] = text.split(/\s+/);
@@ -31,13 +47,14 @@ async function handleCommand(event: Record<string, any>) {
   if (!command) return;
   const badges = event.badges ?? [];
   const isBroadcaster = event.chatter_user_id === event.broadcaster_user_id;
-  const isModerator = isBroadcaster || badges.some((badge: any) => badge.set_id === "moderator");
-  const isSubscriber = badges.some((badge: any) => badge.set_id === "subscriber");
-  let isFollower = isSubscriber || isModerator || badges.some((badge: any) => badge.set_id === "founder");
+  const isModerator = isBroadcaster || badges.some((badge) => badge.set_id === "moderator");
+  const isSubscriber = badges.some((badge) => badge.set_id === "subscriber");
+  let isFollower = isSubscriber || isModerator || badges.some((badge) => badge.set_id === "founder");
   if (command.permission === "follower" && !isFollower) {
     try {
       const response = await twitchFetch(`/channels/followers?broadcaster_id=${encodeURIComponent(event.broadcaster_user_id)}&user_id=${encodeURIComponent(event.chatter_user_id)}`);
-      isFollower = ((await response.json()).data ?? []).length > 0;
+      const followerResult = await response.json() as { data?: unknown[] };
+      isFollower = (followerResult.data ?? []).length > 0;
     } catch { isFollower = false; }
   }
   const allowed = command.permission === "everyone"
@@ -152,7 +169,7 @@ async function handleCommand(event: Record<string, any>) {
   }
 }
 
-async function processEvent(type: string, event: Record<string, any>, messageId: string) {
+async function processEvent(type: string, event: TwitchEvent, messageId: string) {
   const supabase = serviceClient();
   const { error } = await supabase.from("platform_events").insert({ platform:"TWITCH",external_event_id:messageId,event_type:type,payload:event,occurred_at:new Date().toISOString() });
   if (error?.code === "23505") return;
