@@ -203,12 +203,24 @@ export default function ControlPage() {
       // SIGNED_IN can also be emitted when a tab regains focus. Revalidating
       // the same user here made the entire Control briefly return to its login
       // state. Token refreshes must remain invisible to the interface.
-      if(event==="SIGNED_OUT")void verifyAccess();
-      else if(event==="SIGNED_IN"&&session?.user.id)void verifyAccess(session.user.id);
-      else if(event==="USER_UPDATED"&&session?.user.id)void verifyAccess(session.user.id,true);
+      // Supabase recommends keeping this callback synchronous. Running another
+      // Supabase request inside it can hold the auth lock and leave the UI in
+      // "checking" indefinitely, so access verification runs on the next task.
+      if(event==="SIGNED_OUT")setTimeout(()=>void verifyAccess(),0);
+      else if(event==="SIGNED_IN"&&session?.user.id)setTimeout(()=>void verifyAccess(session.user.id),0);
+      else if(event==="USER_UPDATED"&&session?.user.id)setTimeout(()=>void verifyAccess(session.user.id,true),0);
     });
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if(accessState!=="checking")return;
+    const timeout=window.setTimeout(()=>{
+      setAccessState("signed_out");
+      setMessage("A verificação demorou mais que o esperado. Tente entrar novamente.");
+    },15000);
+    return ()=>window.clearTimeout(timeout);
+  },[accessState]);
 
   useEffect(() => {
     if (accessState !== "authorized" || !admin || !["owner", "admin"].includes(admin.role)) return;
