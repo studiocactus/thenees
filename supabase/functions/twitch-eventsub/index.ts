@@ -151,7 +151,7 @@ async function handleCommand(event: TwitchEvent) {
   const responsePayload = {
     message:command.response_template,user:event.chatter_user_login,display_name:event.chatter_user_name,
     command:command.command,arguments:argumentsList.join(" "),source_message_id:event.message_id,
-    profile_url:`https://www.theneees.com.br/jogar?player=${encodeURIComponent(event.chatter_user_login)}`,
+    profile_url:`https://thenees.com.br/jogar?player=${encodeURIComponent(event.chatter_user_login)}`,
     rank,level:String(player?.level ?? 1),category:player?.category ?? "SEM CLASSE",
     birthday_users:(birthdayPlayers ?? []).map((item) => `@${item.username}`).join(", ") || "nenhum jogador hoje",
   };

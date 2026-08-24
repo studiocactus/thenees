@@ -15,12 +15,13 @@ const liveStatus: { isLive: boolean; platform: "TWITCH" | "KICK" | null; url: st
 
 // This label will come from the game settings in Thenees Control.
 const gameSettings = { name: "ChatBattle" };
+const repairKnownDomain = (value:string) => value.replace(/theneees\.com\.br/gi,"thenees.com.br");
 const defaultOfficialLinks = {
-  communityUrl: "https://www.theneees.com.br/#comunidade",
+  communityUrl: "https://thenees.com.br/#comunidade",
   discordUrl: "https://discord.gg/fUEG3h2ED",
   twitchUrl: "https://www.twitch.tv/thenees",
   kickUrl: "https://kick.com/thenees",
-  email: "contato@theneees.com.br",
+  email: "contato@thenees.com.br",
   youtubeUrl: "https://www.youtube.com/@theneesr",
   channels: [{platform:"TWITCH",url:"https://www.twitch.tv/thenees"},{platform:"KICK",url:"https://kick.com/thenees"},{platform:"YOUTUBE",url:"https://www.youtube.com/@theneesr"},{platform:"DISCORD",url:"https://discord.gg/fUEG3h2ED"}],
 };
@@ -233,7 +234,7 @@ export default function Home() {
         if (item.key === "official_links" && item.value && typeof item.value === "object") {
           const links = item.value as Record<string,unknown>;
           const channels=Array.isArray(links.channels)?links.channels.filter((channel):channel is {platform:string;url:string}=>Boolean(channel&&typeof channel==="object"&&"platform" in channel&&"url" in channel)):defaultOfficialLinks.channels;
-          setOfficialLinks({ ...defaultOfficialLinks,twitchUrl:String(links.twitch ?? links.twitchUrl ?? defaultOfficialLinks.twitchUrl),kickUrl:String(links.kick ?? links.kickUrl ?? defaultOfficialLinks.kickUrl),youtubeUrl:String(links.youtube ?? links.youtubeUrl ?? defaultOfficialLinks.youtubeUrl),discordUrl:String(links.discord ?? links.discordUrl ?? defaultOfficialLinks.discordUrl),email:String(links.email ?? defaultOfficialLinks.email),communityUrl:String(links.community ?? links.communityUrl ?? defaultOfficialLinks.communityUrl),channels });
+          setOfficialLinks({ ...defaultOfficialLinks,twitchUrl:String(links.twitch ?? links.twitchUrl ?? defaultOfficialLinks.twitchUrl),kickUrl:String(links.kick ?? links.kickUrl ?? defaultOfficialLinks.kickUrl),youtubeUrl:String(links.youtube ?? links.youtubeUrl ?? defaultOfficialLinks.youtubeUrl),discordUrl:String(links.discord ?? links.discordUrl ?? defaultOfficialLinks.discordUrl),email:repairKnownDomain(String(links.email ?? defaultOfficialLinks.email)),communityUrl:repairKnownDomain(String(links.community ?? links.communityUrl ?? defaultOfficialLinks.communityUrl)),channels:channels.map((channel)=>({...channel,url:repairKnownDomain(channel.url)})) });
         }
       }
     });
@@ -801,7 +802,7 @@ export default function Home() {
           <div className="control-nav"><b>THENEES° <span>CONTROL</span></b><i>● CONNECTED</i></div>
           <div className="control-grid"><aside><span>OVERVIEW</span><span>LIVE CONTROL</span><span>GAME MASTER</span><span>LINKS</span><span>BOT</span><span>CONTENT</span></aside><div className="control-main"><small>GOOD EVENING, THENEES.</small><h3>ALL SYSTEMS<br /><span>OPERATIONAL.</span></h3><div className="control-cards"><div>LIVE STATUS<strong>OFFLINE</strong></div><div>BOT STATUS<strong className="green">ONLINE</strong></div><div>ACTIVE LINKS<strong>24</strong></div></div></div></div>
         </div>
-        <div className="control-copy"><div className="section-tag"><span>SYS</span><b>EM BREVE / ACESSO RESTRITO</b></div><h2>THENEES<br /><span>CONTROL.</span></h2><p>O painel central para controlar o site, a live, o game, o bot e tudo que ainda nem inventamos.</p><div className="locked">▣ ADMIN ACCESS <b>LOCKED</b></div></div>
+        <div className="control-copy"><div className="section-tag"><span>SYS</span><b>ONLINE / ACESSO RESTRITO</b></div><h2>THENEES<br /><span>CONTROL.</span></h2><p>O painel central para controlar o site, a live, o game, o bot e tudo que ainda nem inventamos.</p><a className="locked" href="/control">▣ ADMIN ACCESS <b>ENTRAR →</b></a></div>
       </section>
 
       <footer className="site-footer">

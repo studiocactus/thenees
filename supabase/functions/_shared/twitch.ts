@@ -47,7 +47,7 @@ export function normalizeChatText(value: string) {
   return new TextDecoder("utf-8").decode(bytes).normalize("NFC");
 }
 
-export function renderTemplate(template: string, payload: Record<string, unknown>, communityUrl = "https://www.theneees.com.br/#comunidade") {
+export function renderTemplate(template: string, payload: Record<string, unknown>, communityUrl = "https://thenees.com.br/#comunidade") {
   const rendered = template.replace(/\{\{([a-zA-Z0-9_]+)\}\}/g, (_match, key) => String(payload[key] ?? (key === "community_url" ? communityUrl : "")));
   return normalizeChatText(rendered).slice(0, 500);
 }

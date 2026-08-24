@@ -10,7 +10,7 @@ Deno.serve(async (request) => {
   const supabase=serviceClient();
   const token=await getTwitchToken();
   const {data:settings}=await supabase.from("site_settings").select("value").eq("key","official_links").maybeSingle();
-  const communityUrl=(settings?.value as Record<string,string>|null)?.community??"https://www.theneees.com.br/#comunidade";
+  const communityUrl=((settings?.value as Record<string,string>|null)?.community??"https://thenees.com.br/#comunidade").replace(/theneees\.com\.br/gi,"thenees.com.br");
   const {data:items,error}=await supabase.from("bot_outbox").select("*").in("target_platform",["TWITCH","BOTH"]).in("status",["pending","failed"]).lte("available_at",new Date().toISOString()).order("created_at").limit(20);
   if(error)return json({error:error.message},500);
   const results=[];
