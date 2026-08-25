@@ -72,7 +72,9 @@ Deno.serve(async(request)=>{
         await supabase.from("platform_events").update({processed:true}).eq("platform","KICK").eq("external_event_id",messageId);await runWorker();return new Response(null,{status:204});
       }
       const {data:command}=await supabase.from("bot_commands").select("*").eq("command",commandName).eq("enabled",true).maybeSingle();
-      const availableCommand=command&&command.platform_scope!=="TWITCH"?command:null;
+      // !lurker predates platform_scope. Keep this community command available
+      // on both chats even if an older record was accidentally saved as TWITCH.
+      const availableCommand=command&&(command.platform_scope!=="TWITCH"||command.command==="!lurker")?command:null;
       if(availableCommand||commandName==="!comandos"){
         const argumentsList=content.slice(commandName.length).trim().split(/\s+/).filter(Boolean);
         let responseTemplate=availableCommand?.response_template??"";
@@ -92,7 +94,7 @@ Deno.serve(async(request)=>{
             if(!isModerator)responseTemplate=`@${username}, somente a moderação pode resetar este contador.`;
             else{const {error:resetError}=await supabase.from("bot_user_counters").delete().eq("command_id",availableCommand.id).eq("platform","KICK").eq("session_date",sessionDate).ilike("username",target);responseTemplate=resetError?`Não consegui resetar ${availableCommand.command} para @${target}.`:`Contador diário de ${availableCommand.command} para @${target} resetado pela moderação.`;}
           }else{
-            const {data:nextValue,error:counterError}=await supabase.rpc("increment_bot_user_counter",{p_command_id:availableCommand.id,p_platform:"KICK",p_platform_user_id:userId,p_username:username,p_display_name:username,p_session_date:sessionDate});
+            const {data:nextValue,error:counterError}=await supabase.rpc("increment_bot_user_counter",{p_command_id:availableCommand.id,p_platform:"KICK",p_platform_user_id:userId,p_username:username,p_display_name:displayName,p_session_date:sessionDate});
             if(counterError)return new Response("Counter error",{status:500});
             userCount=String(nextValue??1);
           }

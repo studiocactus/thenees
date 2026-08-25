@@ -1,7 +1,7 @@
 import { serviceClient } from "./supabase.ts";
 
 export const twitchScopes = [
-  "user:read:chat", "user:write:chat", "user:bot", "channel:bot", "moderator:read:followers",
+  "user:read:chat", "user:write:chat", "moderator:read:followers",
   "channel:read:subscriptions", "bits:read", "channel:read:redemptions",
 ];
 
