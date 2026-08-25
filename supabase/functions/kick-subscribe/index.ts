@@ -1,5 +1,5 @@
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { kickFetch } from "../_shared/kick.ts";
+import { kickAppFetch, kickChannelUserId } from "../_shared/kick.ts";
 import { requireAdmin, serviceClient } from "../_shared/supabase.ts";
 
 const events = [
@@ -19,7 +19,7 @@ Deno.serve(async (request) => {
     // silently stopped. Reconcile against the remote API instead of trusting
     // the local rows: remove the current token's subscriptions and recreate
     // the complete desired set.
-    const currentResponse = await kickFetch("/public/v1/events/subscriptions");
+    const currentResponse = await kickAppFetch(`/public/v1/events/subscriptions?broadcaster_user_id=${encodeURIComponent(kickChannelUserId)}`);
     const currentPayload = await currentResponse.json();
     const current = Array.isArray(currentPayload.data) ? currentPayload.data : [];
     const currentIds = current
@@ -29,12 +29,12 @@ Deno.serve(async (request) => {
     if (currentIds.length) {
       const query = new URLSearchParams();
       for (const id of currentIds) query.append("id", id);
-      await kickFetch(`/public/v1/events/subscriptions?${query.toString()}`, { method: "DELETE" });
+      await kickAppFetch(`/public/v1/events/subscriptions?${query.toString()}`, { method: "DELETE" });
     }
 
     await serviceClient().from("kick_event_subscriptions").delete().neq("id", "");
 
-    const response = await kickFetch("/public/v1/events/subscriptions", { method:"POST",body:JSON.stringify({ events,method:"webhook" }) });
+    const response = await kickAppFetch("/public/v1/events/subscriptions", { method:"POST",body:JSON.stringify({ broadcaster_user_id:Number(kickChannelUserId),events,method:"webhook" }) });
     const payload = await response.json();
     const results = Array.isArray(payload.data) ? payload.data : [];
     for (const item of results) {
@@ -44,7 +44,7 @@ Deno.serve(async (request) => {
         status:item.error?"error":"enabled",error:item.error??null,updated_at:new Date().toISOString(),
       });
     }
-    const verifyResponse = await kickFetch("/public/v1/events/subscriptions");
+    const verifyResponse = await kickAppFetch(`/public/v1/events/subscriptions?broadcaster_user_id=${encodeURIComponent(kickChannelUserId)}`);
     const verifyPayload = await verifyResponse.json();
     const remote = Array.isArray(verifyPayload.data) ? verifyPayload.data : [];
     const enabledEvents = new Set(remote.map((item: Record<string, unknown>) => String(item.event ?? "")));

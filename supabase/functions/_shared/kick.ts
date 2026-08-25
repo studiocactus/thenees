@@ -1,6 +1,17 @@
 import { serviceClient } from "./supabase.ts";
 
 export const kickScopes = ["user:read", "channel:read", "chat:write", "events:subscribe"];
+export const kickChannelUserId = Deno.env.get("KICK_CHANNEL_USER_ID") ?? "6114353";
+export const kickChannelLogin = (Deno.env.get("KICK_CHANNEL_LOGIN") ?? "thenees").toLowerCase();
+
+export async function kickAppFetch(path:string,init:RequestInit={}) {
+  const tokenResponse=await fetch("https://id.kick.com/oauth/token",{method:"POST",body:new URLSearchParams({client_id:Deno.env.get("KICK_CLIENT_ID")!,client_secret:Deno.env.get("KICK_CLIENT_SECRET")!,grant_type:"client_credentials"})});
+  if(!tokenResponse.ok)throw new Error(`kick_app_token_${tokenResponse.status}`);
+  const token=await tokenResponse.json();
+  const response=await fetch(`https://api.kick.com${path}`,{...init,headers:{Authorization:`Bearer ${token.access_token}`,"Content-Type":"application/json",...(init.headers??{})}});
+  if(!response.ok)throw new Error(`kick_app_${response.status}:${await response.text()}`);
+  return response;
+}
 
 export async function getKickToken() {
   const supabase = serviceClient();

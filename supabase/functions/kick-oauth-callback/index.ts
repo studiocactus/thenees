@@ -1,4 +1,5 @@
 import { serviceClient } from "../_shared/supabase.ts";
+import { kickChannelLogin, kickChannelUserId } from "../_shared/kick.ts";
 
 Deno.serve(async (request) => {
   const requestUrl = new URL(request.url);
@@ -34,7 +35,7 @@ Deno.serve(async (request) => {
   const scopes = Array.isArray(token.scope) ? token.scope : String(token.scope ?? "").split(" ").filter(Boolean);
 
   await supabase.rpc("store_platform_token", { p_platform:"KICK",p_access_token:token.access_token,p_refresh_token:token.refresh_token,p_token_type:token.token_type??"bearer",p_scopes:scopes,p_expires_at:new Date(Date.now()+Number(token.expires_in)*1000).toISOString(),p_external_user_id:String(userId),p_external_login:String(userLogin) });
-  await supabase.from("platform_integrations").upsert({ platform:"KICK",status:"connected",channel_login:String(userLogin),external_user_id:String(userId),display_name:String(userLogin),scopes,eventsub_status:"pending",last_synced_at:new Date().toISOString(),last_error:null,updated_at:new Date().toISOString() });
-  await supabase.from("bot_channels").update({ channel_name:String(userLogin),enabled:true,connection_status:"connected",last_connected_at:new Date().toISOString(),last_error:null,updated_at:new Date().toISOString() }).eq("platform","KICK");
+  await supabase.from("platform_integrations").upsert({ platform:"KICK",status:"connected",channel_login:kickChannelLogin,external_user_id:kickChannelUserId,display_name:"Thenees",bot_user_id:String(userId),bot_login:String(userLogin),bot_display_name:String(userLogin),scopes,eventsub_status:"pending",last_synced_at:new Date().toISOString(),last_error:null,updated_at:new Date().toISOString() });
+  await supabase.from("bot_channels").update({ channel_name:kickChannelLogin,enabled:true,connection_status:"connected",last_connected_at:new Date().toISOString(),last_error:null,updated_at:new Date().toISOString() }).eq("platform","KICK");
   return Response.redirect(`${siteUrl}/control#kick-connected`, 302);
 });

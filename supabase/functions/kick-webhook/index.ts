@@ -23,8 +23,10 @@ async function verify(request:Request,body:string){
 }
 
 async function runWorker(){
-  const secret=Deno.env.get("BOT_WORKER_SECRET"),url=Deno.env.get("SUPABASE_URL");
-  if(secret&&url)await fetch(`${url}/functions/v1/kick-worker`,{method:"POST",headers:{"x-worker-secret":secret,"Content-Type":"application/json"},body:"{}"});
+  const serviceKey=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),url=Deno.env.get("SUPABASE_URL");
+  if(!serviceKey||!url)throw new Error("kick_worker_service_credentials_missing");
+  const response=await fetch(`${url}/functions/v1/kick-worker`,{method:"POST",headers:{Authorization:`Bearer ${serviceKey}`,"Content-Type":"application/json"},body:"{}"});
+  if(!response.ok)throw new Error(`kick_worker_${response.status}:${await response.text()}`);
 }
 
 Deno.serve(async(request)=>{
@@ -99,7 +101,9 @@ Deno.serve(async(request)=>{
             userCount=String(nextValue??1);
           }
         }
-        await supabase.rpc("enqueue_bot_event",{p_event_key:"command_response",p_payload:{message:responseTemplate,user:username,display_name:username,command:commandName,arguments:argumentsList.join(" "),user_count:userCount,platform:"KICK",source_message_id:messageId},p_dedupe_key:`kick-command:${messageId}`});
+        const responsePayload={message:responseTemplate,user:username,display_name:displayName,command:commandName,arguments:argumentsList.join(" "),user_count:userCount,platform:"KICK",source_message_id:messageId};
+        const {error:queueError}=await supabase.from("bot_outbox").insert({event_key:"command_response",target_platform:"KICK",payload:responsePayload,rendered_message:"{{message}}",dedupe_key:`kick-command:${messageId}`});
+        if(queueError&&queueError.code!=="23505")return new Response(`Queue error: ${queueError.message}`,{status:500});
       }
       if(availableCommand){
         await supabase.from("bot_command_events").insert({command_id:availableCommand.id,command:availableCommand.command,platform:"KICK",platform_user_id:userId,username,arguments:content.slice(commandName.length).trim(),outcome:"sent",metadata:{command_type:availableCommand.command_type??"text"}});
