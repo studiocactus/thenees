@@ -2,19 +2,6 @@ import { corsHeaders, json } from "../_shared/cors.ts";
 import { requireAdmin, serviceClient } from "../_shared/supabase.ts";
 import { getTwitchToken, renderTemplate } from "../_shared/twitch.ts";
 
-let cachedAppAccessToken="";
-let cachedAppAccessTokenUntil=0;
-
-async function getAppAccessToken(clientId:string,clientSecret:string){
-  if(cachedAppAccessToken&&cachedAppAccessTokenUntil>Date.now()+60000)return cachedAppAccessToken;
-  const response=await fetch("https://id.twitch.tv/oauth2/token",{method:"POST",body:new URLSearchParams({client_id:clientId,client_secret:clientSecret,grant_type:"client_credentials"})});
-  if(!response.ok)throw new Error(`twitch_app_token_${response.status}`);
-  const body=await response.json();
-  cachedAppAccessToken=String(body.access_token??"");
-  cachedAppAccessTokenUntil=Date.now()+Math.max(60,Number(body.expires_in??3600))*1000;
-  return cachedAppAccessToken;
-}
-
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const secret = request.headers.get("x-worker-secret");
@@ -25,12 +12,10 @@ Deno.serve(async (request) => {
   const {data:integration,error:integrationError}=await supabase.from("platform_integrations").select("external_user_id,bot_user_id").eq("platform","TWITCH").single();
   if(integrationError||!integration?.external_user_id)return json({error:"twitch_channel_not_configured"},503);
   const broadcasterId=String(integration.external_user_id);
-  const botUserId=String(integration.bot_user_id??token.external_user_id);
+  const botUserId=String(token.external_user_id);
   const clientId=Deno.env.get("TWITCH_CLIENT_ID")??"";
-  const clientSecret=Deno.env.get("TWITCH_CLIENT_SECRET")??"";
-  if(!clientId||!clientSecret)return json({error:"twitch_app_credentials_missing"},503);
-  let appAccessToken="";
-  try{appAccessToken=await getAppAccessToken(clientId,clientSecret);}catch(error){return json({error:error instanceof Error?error.message:String(error)},503);}
+  if(!clientId)return json({error:"twitch_client_id_missing"},503);
+  if(integration.bot_user_id&&String(integration.bot_user_id)!==botUserId)return json({error:"twitch_bot_token_identity_mismatch"},503);
   const {data:settings}=await supabase.from("site_settings").select("value").eq("key","official_links").maybeSingle();
   const communityUrl=((settings?.value as Record<string,string>|null)?.community??"https://thenees.com.br/#comunidade").replace(/theneees\.com\.br/gi,"thenees.com.br");
   // EventSub is real-time: prioritize one fresh response and never let an old
@@ -50,7 +35,7 @@ Deno.serve(async (request) => {
     await supabase.from("bot_outbox").update({status:"processing",attempts:item.attempts+1}).eq("id",item.id);
     const message=renderTemplate(item.rendered_message??"{{message}}",item.payload as Record<string,unknown>,communityUrl);
     try{
-      const response=await fetch("https://api.twitch.tv/helix/chat/messages",{method:"POST",headers:{Authorization:`Bearer ${appAccessToken}`,"Client-Id":clientId,"Content-Type":"application/json"},body:JSON.stringify({broadcaster_id:broadcasterId,sender_id:botUserId,message,for_source_only:true})});
+      const response=await fetch("https://api.twitch.tv/helix/chat/messages",{method:"POST",headers:{Authorization:`Bearer ${token.access_token}`,"Client-Id":clientId,"Content-Type":"application/json"},body:JSON.stringify({broadcaster_id:broadcasterId,sender_id:botUserId,message})});
       if(!response.ok)throw new Error(`twitch_${response.status}:${await response.text()}`);
       const outcome=(await response.json()).data?.[0];
       if(!outcome?.is_sent)throw new Error(outcome?.drop_reason?.message??"message_not_sent");
