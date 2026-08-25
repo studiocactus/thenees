@@ -1,0 +1,7 @@
+.control-special-viewers > form aside em {
+  font: 7px/1.5 var(--font-pixel);
+  font-style: normal;
+}
+
+.control-special-viewers > form aside em.error { color: #ff8585; }
+.control-special-viewers > form aside em.saved { color: #c5ff00; }

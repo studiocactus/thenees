@@ -48,6 +48,7 @@ export function normalizeChatText(value: string) {
 }
 
 export function renderTemplate(template: string, payload: Record<string, unknown>, communityUrl = "https://thenees.com.br/#comunidade") {
-  const rendered = template.replace(/\{\{([a-zA-Z0-9_]+)\}\}/g, (_match, key) => String(payload[key] ?? (key === "community_url" ? communityUrl : "")));
+  const replaceVariables = (value: string) => value.replace(/\{\{([a-zA-Z0-9_]+)\}\}/g, (_match, key) => String(payload[key] ?? (key === "community_url" ? communityUrl : "")));
+  const rendered = replaceVariables(replaceVariables(template));
   return normalizeChatText(rendered).slice(0, 500);
 }

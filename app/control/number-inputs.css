@@ -1,0 +1,14 @@
+.control-dashboard input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.control-dashboard input[type="number"]::-webkit-inner-spin-button,
+.control-dashboard input[type="number"]::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+.control-bot form[data-control-form="bot-core"] .control-editor-actions button[type="submit"] {
+  display: none;
+}

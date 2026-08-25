@@ -6,6 +6,21 @@ verify_jwt = true
 [functions.twitch-oauth-callback]
 verify_jwt = false
 
+[functions.kick-oauth-start]
+verify_jwt = true
+
+[functions.kick-oauth-callback]
+verify_jwt = false
+
+[functions.kick-subscribe]
+verify_jwt = true
+
+[functions.kick-webhook]
+verify_jwt = false
+
+[functions.kick-worker]
+verify_jwt = false
+
 [functions.twitch-eventsub]
 verify_jwt = false
 

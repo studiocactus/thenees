@@ -40,3 +40,7 @@ yarn-error.log*
 /.wrangler/
 /outputs/
 /work/
+
+# local deployment and Supabase CLI state
+/.deploy-twitch-swap/
+/supabase/.temp/
