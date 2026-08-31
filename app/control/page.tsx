@@ -4428,9 +4428,16 @@ export default function ControlPage() {
   const connectedPlatformCount = [twitchIntegration, kickIntegration].filter(
     (item) => item?.status === "connected",
   ).length;
-  const botFailureCount = botOutbox.filter(
+  const botFailureHistoryCount = botOutbox.filter(
     (item) => item.status === "failed",
   ).length;
+  const recentFailureCutoff = Date.now() - 60 * 60 * 1000;
+  const recentBotFailures = botOutbox.filter(
+    (item) =>
+      item.status === "failed" &&
+      new Date(item.created_at).getTime() >= recentFailureCutoff,
+  );
+  const botFailureCount = recentBotFailures.length;
   const botPendingCount = botOutbox.filter(
     (item) => item.status === "pending",
   ).length;
@@ -9018,8 +9025,11 @@ export default function ControlPage() {
                   {botOutbox.filter((item) => item.status === "pending").length}
                 </b>
                 <span>
-                  {botOutbox.filter((item) => item.status === "failed").length}{" "}
-                  FALHAS
+                  {botFailureCount > 0
+                    ? `${botFailureCount} FALHAS RECENTES`
+                    : botFailureHistoryCount > 0
+                      ? `${botFailureHistoryCount} NO HISTÓRICO`
+                      : "SEM FALHAS"}
                 </span>
               </article>
             </div>
@@ -9802,8 +9812,8 @@ export default function ControlPage() {
                 <article className={connectedPlatformCount === 2 ? "healthy" : "attention"}>
                   <small>CONEXÕES</small><b>{connectedPlatformCount}/2</b><span>{connectedPlatformCount === 2 ? "TWITCH E KICK CONECTADAS" : "REVISAR PLATAFORMAS"}</span>
                 </article>
-                <article className={botOutbox.some((item) => item.status === "failed") ? "error" : "healthy"}>
-                  <small>FALHAS RECENTES</small><b>{botOutbox.filter((item) => item.status === "failed").length}</b><span>{botOutbox.some((item) => item.status === "failed") ? "ABRA O HISTÓRICO OPERACIONAL" : "NENHUMA FALHA NA FILA"}</span>
+                <article className={botFailureCount > 0 ? "error" : "healthy"}>
+                  <small>FALHAS RECENTES</small><b>{botFailureCount}</b><span>{botFailureCount > 0 ? "ABRA O HISTÓRICO OPERACIONAL" : botFailureHistoryCount > 0 ? `${botFailureHistoryCount} REGISTRO NO HISTÓRICO` : "NENHUMA FALHA NA FILA"}</span>
                 </article>
                 <article className={botOutbox.some((item) => item.status === "pending") ? "attention" : "healthy"}>
                   <small>NA FILA</small><b>{botOutbox.filter((item) => item.status === "pending").length}</b><span>ENTREGAS AGUARDANDO WORKER</span>
