@@ -12,7 +12,7 @@ alter table public.bot_commands add column if not exists usage_count bigint not 
 alter table public.bot_commands add column if not exists last_used_at timestamptz;
 
 alter table public.bot_commands drop constraint if exists bot_commands_command_type_check;
-alter table public.bot_commands add constraint bot_commands_command_type_check check(command_type in ('text','random','counter','dice','choice','eight_ball'));
+alter table public.bot_commands add constraint bot_commands_command_type_check check(command_type in ('text','random','counter','user_counter','dice','choice','eight_ball'));
 alter table public.bot_commands drop constraint if exists bot_commands_platform_scope_check;
 alter table public.bot_commands add constraint bot_commands_platform_scope_check check(platform_scope in ('TWITCH','KICK','BOTH'));
 alter table public.bot_commands drop constraint if exists bot_commands_global_cooldown_check;

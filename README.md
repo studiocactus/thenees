@@ -30,3 +30,11 @@ O cliente oficial está preparado em `lib/supabase/client.ts`.
 ## Documentação do estado aprovado
 
 Consulte `PROJECT_STATE.md` antes de qualquer alteração. O documento registra a identidade, tipografia, Hero, estrutura, interações, decisões descartadas e regras de preservação do protótipo atual.
+
+## Respostas aleatórias do bot
+
+Campos de mensagem de comandos, timers e mensagens automáticas aceitam uma variação por linha. A cada envio, o bot escolhe uma das linhas preenchidas aleatoriamente; linhas vazias são ignoradas. Esse recurso não usa inteligência artificial nem serviços pagos.
+
+O Control inclui um gerador local de ideias com tons natural, bem-humorado e animado. As sugestões são produzidas a partir de uma biblioteca interna, podem conter variáveis do bot e só são adicionadas depois da seleção do administrador. O gerador não envia dados para serviços externos.
+
+O modo futuro com IA está especificado em `docs/AI_MESSAGE_MODE_FUTURE.md`, mas permanece desativado e sem chamadas externas.

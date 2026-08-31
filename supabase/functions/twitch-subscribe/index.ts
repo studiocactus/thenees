@@ -6,6 +6,7 @@ const definitions = [
   ["stream.online","1","broadcaster"], ["stream.offline","1","broadcaster"],
   ["channel.follow","2","moderator"], ["channel.subscribe","1","broadcaster"],
   ["channel.subscription.message","1","broadcaster"], ["channel.cheer","1","broadcaster"],
+  ["channel.raid","1","raid"],
   ["channel.chat.message","1","user"],
 ] as const;
 
@@ -32,7 +33,7 @@ Deno.serve(async (request) => {
   const appToken = (await appTokenResponse.json()).access_token as string;
   const twitchHeaders={"Authorization":`Bearer ${appToken}`,"Client-Id":clientId,"Content-Type":"application/json"};
   const desiredConditions=new Map<string,Record<string,string>>(definitions.map(([type,version,conditionMode])=>{
-    const condition:Record<string,string>={broadcaster_user_id:broadcasterId};
+    const condition:Record<string,string>=conditionMode==="raid"?{to_broadcaster_user_id:broadcasterId}:{broadcaster_user_id:broadcasterId};
     if(conditionMode==="moderator")condition.moderator_user_id=botUserId;
     if(conditionMode==="user")condition.user_id=botUserId;
     return [`${type}:${version}`,condition] as const;
@@ -57,7 +58,8 @@ Deno.serve(async (request) => {
     if(!desired)continue;
     const condition=subscription.condition as Record<string,string>|undefined;
     const transport=subscription.transport as Record<string,unknown>|undefined;
-    if(String(condition?.broadcaster_user_id??"")!==broadcasterId||String(transport?.callback??"")!==callback)continue;
+    const targetsChannel=type==="channel.raid"?String(condition?.to_broadcaster_user_id??"")===broadcasterId:String(condition?.broadcaster_user_id??"")===broadcasterId;
+    if(!targetsChannel||String(transport?.callback??"")!==callback)continue;
     const exactCondition=Object.entries(desired).every(([name,value])=>String(condition?.[name]??"")===value)
       && Object.keys(condition??{}).length===Object.keys(desired).length;
     const enabled=String(subscription.status??"")==="enabled";
@@ -70,7 +72,7 @@ Deno.serve(async (request) => {
   const results=[];
   for (const [type,version,conditionMode] of definitions) {
     if(retained.has(`${type}:${version}`)){results.push({type,status:"enabled"});continue;}
-    const condition:Record<string,string>={broadcaster_user_id:broadcasterId};
+    const condition:Record<string,string>=conditionMode==="raid"?{to_broadcaster_user_id:broadcasterId}:{broadcaster_user_id:broadcasterId};
     if(conditionMode==="moderator")condition.moderator_user_id=botUserId;
     if(conditionMode==="user")condition.user_id=botUserId;
     try {
@@ -78,13 +80,16 @@ Deno.serve(async (request) => {
       if(response.status===409){results.push({type,status:"exists"});continue;}
       if(!response.ok) throw new Error(`twitch_${response.status}:${await response.text()}`);
       const subscription=(await response.json()).data?.[0];
-      if(subscription){await serviceClient().from("twitch_eventsub_subscriptions").upsert({id:subscription.id,subscription_type:subscription.type,version:subscription.version,status:subscription.status,cost:subscription.cost,condition:subscription.condition,created_at:subscription.created_at,updated_at:new Date().toISOString()});results.push({type,status:subscription.status});}
+      if(subscription){
+        if(subscription.status==="enabled")await serviceClient().from("twitch_eventsub_subscriptions").upsert({id:subscription.id,subscription_type:subscription.type,version:subscription.version,status:subscription.status,cost:subscription.cost,condition:subscription.condition,created_at:subscription.created_at,updated_at:new Date().toISOString()});
+        results.push({type,status:subscription.status});
+      }
     } catch(error){results.push({type,status:"error",error:String(error)});}
   }
   const hasError=results.some((item)=>item.status==="error");
   const listResponse=await fetch("https://api.twitch.tv/helix/eventsub/subscriptions",{headers:twitchHeaders});
   const liveSubscriptions=listResponse.ok?((await listResponse.json()).data??[]).filter((item:Record<string,unknown>)=>(item.transport as Record<string,unknown>)?.callback===callback):[];
-  for(const subscription of liveSubscriptions){await serviceClient().from("twitch_eventsub_subscriptions").upsert({id:subscription.id,subscription_type:subscription.type,version:subscription.version,status:subscription.status,cost:subscription.cost,condition:subscription.condition,created_at:subscription.created_at,updated_at:new Date().toISOString()});}
+  for(const subscription of liveSubscriptions){if(subscription.status==="enabled")await serviceClient().from("twitch_eventsub_subscriptions").upsert({id:subscription.id,subscription_type:subscription.type,version:subscription.version,status:subscription.status,cost:subscription.cost,condition:subscription.condition,created_at:subscription.created_at,updated_at:new Date().toISOString()});}
   const hasEnabled=liveSubscriptions.some((item:Record<string,unknown>)=>item.status==="enabled");
   const failureSummary=results.filter((item)=>item.status==="error").map((item)=>`${item.type}: ${item.error}`).join(" | ").slice(0,1800);
   await serviceClient().from("platform_integrations").update({eventsub_status:hasError?"error":hasEnabled?"active":"pending",last_error:hasError?failureSummary:null,updated_at:new Date().toISOString()}).eq("platform","TWITCH");

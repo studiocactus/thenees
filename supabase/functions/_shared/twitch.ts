@@ -2,7 +2,7 @@ import { serviceClient } from "./supabase.ts";
 
 export const twitchScopes = [
   "user:read:chat", "user:write:chat", "user:bot", "channel:bot", "moderator:read:followers",
-  "channel:read:subscriptions", "bits:read", "channel:read:redemptions",
+  "channel:read:subscriptions", "bits:read", "channel:read:redemptions", "moderator:manage:announcements",
 ];
 
 export async function getTwitchToken() {
@@ -47,8 +47,20 @@ export function normalizeChatText(value: string) {
   return new TextDecoder("utf-8").decode(bytes).normalize("NFC");
 }
 
+export function chooseChatMessageVariant(value: string) {
+  const variants = value
+    .split(/\r?\n/)
+    .map((variant) => variant.trim())
+    .filter(Boolean);
+  if (variants.length <= 1) return variants[0] ?? "";
+  const randomValue = crypto.getRandomValues(new Uint32Array(1))[0];
+  return variants[randomValue % variants.length];
+}
+
 export function renderTemplate(template: string, payload: Record<string, unknown>, communityUrl = "https://thenees.com.br/#comunidade") {
-  const replaceVariables = (value: string) => value.replace(/\{\{([a-zA-Z0-9_]+)\}\}/g, (_match, key) => String(payload[key] ?? (key === "community_url" ? communityUrl : "")));
+  const randomNumber = (crypto.getRandomValues(new Uint32Array(1))[0] % 100) + 1;
+  const variables: Record<string, unknown> = { random_number: randomNumber, ...payload };
+  const replaceVariables = (value: string) => value.replace(/\{\{([a-zA-Z0-9_]+)\}\}/g, (_match, key) => String(variables[key] ?? (key === "community_url" ? communityUrl : "")));
   const rendered = replaceVariables(replaceVariables(template));
-  return normalizeChatText(rendered).slice(0, 500);
+  return normalizeChatText(chooseChatMessageVariant(rendered)).slice(0, 500);
 }

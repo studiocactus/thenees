@@ -7,6 +7,7 @@ import "./bot-overview.css";
 import "./moderator-command-center.css";
 import "./number-inputs.css";
 import "./notifications.css";
+import "./readability.css";
 
 export const metadata: Metadata = {
   title: "Thenees Control — Acesso restrito",

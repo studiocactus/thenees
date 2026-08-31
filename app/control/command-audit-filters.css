@@ -1,0 +1,35 @@
+.control-command-audit-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-bottom: 1px solid #34363b;
+  background: #0b0c0f;
+}
+
+.control-command-audit-filters select {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #454850;
+  background: #111216;
+  color: #f4f4ef;
+  font: 7px var(--font-pixel);
+}
+
+.control-command-audit-filters b {
+  margin-left: auto;
+  color: #c5ff00;
+  font: 7px var(--font-pixel);
+}
+
+@media (max-width: 850px) {
+  .control-command-audit-filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .control-command-audit-filters b {
+    margin-left: 0;
+    text-align: right;
+  }
+}

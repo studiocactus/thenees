@@ -1,0 +1,282 @@
+/* Control typography system — legibility takes priority over pixel density. */
+.control-dashboard-v2{
+  --control-type-meta:9px;
+  --control-type-ui:10px;
+  --control-type-body:11px;
+  --control-line-ui:1.55;
+  --control-line-body:1.75;
+  --control-text-muted:#a3a7ae;
+  --control-text-soft:#c4c6cb;
+}
+
+/* Navigation and persistent chrome */
+.control-dashboard-v2 .control-nav-category,
+.control-dashboard-v2 .control-nav-children button,
+.control-dashboard-v2 .control-sidebar-footer,
+.control-dashboard-v2 .control-user-area,
+.control-dashboard-v2 .control-operational-alert,
+.control-dashboard-v2 .control-notice{font-size:var(--control-type-ui)!important;line-height:var(--control-line-ui)!important}
+.control-dashboard-v2 .control-nav-category b,
+.control-dashboard-v2 .control-nav-children button{letter-spacing:.02em}
+.control-dashboard-v2 .control-nav-children button small,
+.control-dashboard-v2 .control-sidebar small,
+.control-dashboard-v2 .control-user-area small{font-size:var(--control-type-meta)!important;line-height:1.45!important}
+
+/* Section hierarchy */
+.control-dashboard-v2 .control-editor-heading small,
+.control-dashboard-v2 .control-command-heading small,
+.control-dashboard-v2 section>header small,
+.control-dashboard-v2 article>small,
+.control-dashboard-v2 fieldset legend{font-size:var(--control-type-meta)!important;line-height:1.5!important}
+.control-dashboard-v2 .control-editor-heading p,
+.control-dashboard-v2 .control-command-heading p,
+.control-dashboard-v2 section>header p{color:var(--control-text-muted)!important;font-size:var(--control-type-body)!important;line-height:var(--control-line-body)!important}
+.control-dashboard-v2 .control-editor-heading h2{line-height:.95!important}
+
+/* Explanations, descriptions and helper copy */
+.control-dashboard-v2 article p,
+.control-dashboard-v2 aside p,
+.control-dashboard-v2 fieldset p,
+.control-dashboard-v2 .control-command-library article p,
+.control-dashboard-v2 .control-command-manual article p,
+.control-dashboard-v2 .control-command-chat-tools p,
+.control-dashboard-v2 .control-command-type-grid span,
+.control-dashboard-v2 .control-command-builder-review p,
+.control-dashboard-v2 .control-bot-module-grid p,
+.control-dashboard-v2 .control-attention-board p,
+.control-dashboard-v2 .control-admin-focus p{color:var(--control-text-muted)!important;font-size:var(--control-type-body)!important;line-height:var(--control-line-body)!important}
+
+/* Labels, values, statuses and buttons */
+.control-dashboard-v2 label,
+.control-dashboard-v2 button,
+.control-dashboard-v2 select,
+.control-dashboard-v2 input,
+.control-dashboard-v2 textarea,
+.control-dashboard-v2 code,
+.control-dashboard-v2 time{font-size:var(--control-type-ui)!important;line-height:var(--control-line-ui)!important}
+.control-dashboard-v2 label>small,
+.control-dashboard-v2 button small,
+.control-dashboard-v2 article small,
+.control-dashboard-v2 article em,
+.control-dashboard-v2 article u,
+.control-dashboard-v2 article time,
+.control-dashboard-v2 .control-filter-label,
+.control-dashboard-v2 .control-command-table-head,
+.control-dashboard-v2 .control-quote-table-head{font-size:var(--control-type-meta)!important;line-height:1.55!important}
+
+/* Operational overview */
+.control-dashboard-v2 .control-live-overview-copy>small,
+.control-dashboard-v2 .control-live-overview-copy p,
+.control-dashboard-v2 .control-operations-grid header small,
+.control-dashboard-v2 .control-platform-board>button span small,
+.control-dashboard-v2 .control-platform-board>button strong,
+.control-dashboard-v2 .control-platform-board>footer,
+.control-dashboard-v2 .control-bot-snapshot button span,
+.control-dashboard-v2 .control-bot-snapshot button small,
+.control-dashboard-v2 .control-content-snapshot span,
+.control-dashboard-v2 .control-context-actions,
+.control-dashboard-v2 .control-recent-activity{font-size:var(--control-type-meta)!important;line-height:1.55!important}
+
+/* Improve contrast of previously low-contrast supporting text. */
+.control-dashboard-v2 small,
+.control-dashboard-v2 em,
+.control-dashboard-v2 time,
+.control-dashboard-v2 [class*="description"],
+.control-dashboard-v2 [class*="helper"]{color:var(--control-text-muted)}
+.control-dashboard-v2 input::placeholder,
+.control-dashboard-v2 textarea::placeholder{color:#777c84;opacity:1}
+
+/* Final title contract: Site, ArrobaSrv and administration areas share one rhythm. */
+.control-dashboard-v2 .control-editor-heading,
+.control-dashboard-v2 .control-command-heading,
+.control-dashboard-v2 .control-backend-heading{
+  box-sizing:border-box!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:center!important;
+  gap:32px!important;
+  min-height:152px!important;
+  margin:0!important;
+  padding:30px 28px!important;
+  border:1px solid #30323a!important;
+  border-left:4px solid #7657ff!important;
+  background:linear-gradient(110deg,rgba(118,87,255,.08),rgba(16,17,22,.98) 44%)!important;
+}
+.control-dashboard-v2 .control-editor-heading>div,
+.control-dashboard-v2 .control-command-heading>div,
+.control-dashboard-v2 .control-backend-heading>div{min-width:0!important}
+.control-dashboard-v2 .control-editor-heading small,
+.control-dashboard-v2 .control-command-heading small,
+.control-dashboard-v2 .control-backend-heading small{
+  display:block!important;
+  margin:0!important;
+  letter-spacing:.12em!important;
+}
+.control-dashboard-v2 .control-editor-heading h2,
+.control-dashboard-v2 .control-command-heading h1,
+.control-dashboard-v2 .control-command-heading h2,
+.control-dashboard-v2 .control-backend-heading h2{
+  margin:20px 0 14px!important;
+  font-size:clamp(28px,2.4vw,34px)!important;
+  line-height:.95!important;
+}
+.control-dashboard-v2 .control-command-heading h1,
+.control-dashboard-v2 .control-command-heading h1 em{
+  color:#c5ff00!important;
+}
+.control-dashboard-v2 .control-editor-heading p,
+.control-dashboard-v2 .control-command-heading p,
+.control-dashboard-v2 .control-backend-heading p{
+  max-width:920px!important;
+  margin:0!important;
+}
+.control-dashboard-v2 .control-backend-heading{margin-top:0!important}
+
+/* Site editors used the section border as part of the title, leaving the title
+   attached to the form. Keep the same 16px separation used by Bot Overview. */
+.control-dashboard-v2 .control-editor{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:16px!important;
+  border:0!important;
+  background:transparent!important;
+}
+.control-dashboard-v2 .control-chat-timers{gap:16px!important}
+.control-dashboard-v2 .control-command-toolbar>label input{
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-height:44px!important;
+  padding:0 12px 0 39px!important;
+  border:1px solid #454850!important;
+  border-radius:0!important;
+  background:#0b0c0f!important;
+  color:#f4f4ef!important;
+  outline:0!important;
+}
+.control-dashboard-v2 .control-command-toolbar>label input:focus{border-color:#c5ff00!important}
+
+/* Timer management follows the exact open-list rhythm used by Chat Commands. */
+.control-dashboard-v2 .control-chat-timers>form{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:16px!important;
+  overflow:visible!important;
+  border:0!important;
+  background:transparent!important;
+}
+.control-dashboard-v2 .control-chat-timers .control-timer-toolbar{
+  min-height:44px!important;
+  margin:6px 0 0!important;
+  padding:0!important;
+  justify-content:flex-end!important;
+  border:0!important;
+  background:transparent!important;
+}
+.control-dashboard-v2 .control-chat-timers .control-timer-list{
+  gap:8px!important;
+  padding:0!important;
+  background:transparent!important;
+}
+.control-dashboard-v2 .control-chat-timers .control-timer-table-head{
+  min-height:0!important;
+  padding:13px 18px!important;
+  border:0!important;
+  border-bottom:1px solid #34363b!important;
+  background:transparent!important;
+}
+.control-dashboard-v2 .control-chat-timers .control-timer-accordion{
+  min-height:58px!important;
+  border:1px solid #34363b!important;
+  background:#111216!important;
+}
+.control-dashboard-v2 .control-chat-timers form>.control-editor-actions{
+  margin-top:0!important;
+  border:1px solid #34363b!important;
+  background:#0d0e11!important;
+}
+.control-dashboard-v2 .control-editor>form{
+  border:1px solid #3c3e44!important;
+  background:#111216!important;
+}
+
+/* Canonical component used by every new Control area. */
+.control-dashboard-v2 .control-section-heading{
+  position:relative!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-height:152px!important;
+  padding:30px 28px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:center!important;
+  gap:32px!important;
+  overflow:hidden!important;
+  border:1px solid #30323a!important;
+  border-left:4px solid #7657ff!important;
+  background:linear-gradient(110deg,rgba(118,87,255,.08),rgba(16,17,22,.98) 44%)!important;
+}
+.control-dashboard-v2 .control-section-heading>div{min-width:0!important}
+.control-dashboard-v2 .control-section-heading small{
+  display:block!important;
+  margin:0!important;
+  color:var(--control-text-muted)!important;
+  font-size:var(--control-type-meta)!important;
+  line-height:1.5!important;
+  letter-spacing:.12em!important;
+}
+.control-dashboard-v2 .control-section-heading h1,
+.control-dashboard-v2 .control-section-heading h2{
+  margin:20px 0 14px!important;
+  color:#f4f4ef!important;
+  font:clamp(28px,2.4vw,34px)/.95 var(--font-display)!important;
+  letter-spacing:.01em!important;
+}
+.control-dashboard-v2 .control-section-heading-accent h1,
+.control-dashboard-v2 .control-section-heading-accent h2{color:#c5ff00!important}
+.control-dashboard-v2 .control-section-heading p{
+  max-width:920px!important;
+  margin:0!important;
+  color:var(--control-text-muted)!important;
+  font-size:var(--control-type-body)!important;
+  line-height:var(--control-line-body)!important;
+}
+.control-dashboard-v2 .control-section-heading>span{
+  padding:10px 12px!important;
+  border:1px solid #444750!important;
+  background:#0d0e11!important;
+  color:#c5ff00!important;
+  font-size:var(--control-type-meta)!important;
+  line-height:1.5!important;
+}
+
+/* This legacy heading replaces its text through ::after; keep only that label visible. */
+.control-dashboard-v2 .control-bot:has(.control-bot-commands) .control-editor-heading h2{
+  font-size:0!important;
+  line-height:0!important;
+}
+.control-dashboard-v2 .control-bot:has(.control-bot-commands) .control-editor-heading h2::after{
+  display:block!important;
+  margin:0!important;
+  font-size:clamp(28px,2.4vw,34px)!important;
+  line-height:.95!important;
+}
+
+@media(max-width:650px){
+  .control-dashboard-v2{--control-type-meta:9px;--control-type-ui:10px;--control-type-body:10px}
+  .control-dashboard-v2 button{min-height:42px}
+  .control-dashboard-v2 .control-editor-heading,
+  .control-dashboard-v2 .control-section-heading,
+  .control-dashboard-v2 .control-command-heading,
+  .control-dashboard-v2 .control-backend-heading{
+    grid-template-columns:1fr!important;
+    gap:20px!important;
+    min-height:0!important;
+    padding:24px 20px!important;
+  }
+  .control-dashboard-v2 .control-editor-heading h2,
+  .control-dashboard-v2 .control-section-heading h1,
+  .control-dashboard-v2 .control-section-heading h2,
+  .control-dashboard-v2 .control-command-heading h1,
+  .control-dashboard-v2 .control-command-heading h2,
+  .control-dashboard-v2 .control-backend-heading h2{margin:16px 0 12px!important}
+}

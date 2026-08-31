@@ -1,0 +1,31 @@
+.control-command-editor-tabs {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0;
+  margin: -20px -20px 6px;
+  border-bottom: 1px solid #34363b;
+}
+
+.control-command-editor-tabs button {
+  min-height: 48px;
+  padding: 0 20px;
+  border: 0;
+  border-right: 1px solid #34363b;
+  border-bottom: 3px solid transparent;
+  background: #0b0c0f;
+  color: #8f939b;
+  font: 8px var(--font-pixel);
+  cursor: pointer;
+}
+
+.control-command-editor-tabs button:hover { color: #f4f4ef; }
+.control-command-editor-tabs button.active {
+  border-bottom-color: #7567ff;
+  background: #111218;
+  color: #f4f4ef;
+}
+
+@media (max-width: 600px) {
+  .control-command-editor-tabs { flex-direction: column; }
+  .control-command-editor-tabs button { border-right: 0; }
+}

@@ -1,5 +1,7 @@
 "use client";
 
+import { ControlIcon } from "../ControlIcon";
+
 import { useEffect, useState, type FormEvent } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -47,7 +49,7 @@ export default function SetupPasswordPage() {
       {ready && !completed && <form onSubmit={handleSubmit}>
         <label>NOVA SENHA<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" minLength={10} required /></label>
         <label>CONFIRMAR SENHA<input type="password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoComplete="new-password" minLength={10} required /></label>
-        <button type="submit">SALVAR SENHA →</button>
+        <button type="submit"><ControlIcon name="save" size={15} /> SALVAR SENHA</button>
       </form>}
       <a href="/control">← VOLTAR PARA O LOGIN</a>
     </section>

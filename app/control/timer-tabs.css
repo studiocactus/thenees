@@ -1,0 +1,7 @@
+.control-timer-fields[data-tab="basic"] > .timer-advanced { display: none; }
+.control-timer-fields[data-tab="advanced"] > .timer-basic { display: none; }
+.control-timer-fields > .timer-basic.wide { grid-column: 1 / -1; }
+.control-automation-accordion fieldset[data-tab="basic"] > .automation-advanced { display: none; }
+.control-automation-accordion fieldset[data-tab="advanced"] > .automation-basic { display: none; }
+.control-automation-accordion fieldset > .automation-basic.wide { grid-column: 1 / -1; }
+.control-timer-evaluation{grid-column:1/-1;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid #34363b;background:#0b0c0f}.control-timer-evaluation b{margin-right:auto;color:#8f939b;font:7px var(--font-pixel)}.control-timer-evaluation span{padding:7px 9px;border:1px solid #454850;color:#aeb1b8;font:7px var(--font-pixel)}.control-timer-evaluation span.eligible{border-color:#c5ff00;color:#c5ff00}.control-timer-evaluation span.blocked{border-color:#ffd166;color:#ffd166}

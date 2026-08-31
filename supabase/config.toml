@@ -30,5 +30,8 @@ verify_jwt = true
 [functions.twitch-worker]
 verify_jwt = false
 
+[functions.chat-timer-worker]
+verify_jwt = false
+
 [functions.platform-disconnect]
 verify_jwt = true

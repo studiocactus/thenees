@@ -38,19 +38,33 @@ async function verifySignature(request: Request, rawBody: string) {
   return safeEqual(signature, received);
 }
 
-async function greetFirstChatMessage(event: TwitchEvent) {
+async function queueConfiguredWelcome(event: TwitchEvent) {
   const supabase=serviceClient();
   const sessionDate=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Sao_Paulo",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
   const {error}=await supabase.from("bot_chat_presence").insert({platform:"TWITCH",platform_user_id:event.chatter_user_id,username:event.chatter_user_login,display_name:event.chatter_user_name,session_date:sessionDate});
-  if(error?.code==="23505")return;
   if(error)return;
-  const payload={user:event.chatter_user_login,username:event.chatter_user_login,display_name:event.chatter_user_name,platform:"TWITCH",session_date:sessionDate};
   const {data:special}=await supabase.from("bot_viewer_messages").select("message_template").eq("platform","TWITCH").eq("enabled",true).ilike("username",event.chatter_user_login).maybeSingle();
-  const {data:queuedId}=special?await supabase.from("bot_outbox").insert({event_key:"special_viewer_message",target_platform:"TWITCH",payload,rendered_message:special.message_template,dedupe_key:`twitch-special-welcome:${event.chatter_user_id}:${sessionDate}`}).select("id").single():await supabase.rpc("enqueue_bot_event",{p_event_key:"first_chat_message",p_payload:payload,p_dedupe_key:`twitch-welcome:${event.chatter_user_id}:${sessionDate}`});
-  if(!queuedId)return;
-  const workerSecret=Deno.env.get("BOT_WORKER_SECRET");
-  const projectUrl=Deno.env.get("SUPABASE_URL");
+  if(!special)return;
+  const payload={user:event.chatter_user_login,username:event.chatter_user_login,display_name:event.chatter_user_name,platform:"TWITCH",session_date:sessionDate,source_message_id:event.message_id};
+  const {data:queued}=await supabase.from("bot_outbox").insert({event_key:"special_viewer_message",target_platform:"TWITCH",payload,rendered_message:special.message_template,dedupe_key:`twitch-special-welcome:${event.chatter_user_id}:${sessionDate}`}).select("id").single();
+  if(!queued)return;
+  const workerSecret=Deno.env.get("BOT_WORKER_SECRET"),projectUrl=Deno.env.get("SUPABASE_URL");
   if(workerSecret&&projectUrl)await fetch(`${projectUrl}/functions/v1/twitch-worker`,{method:"POST",headers:{"x-worker-secret":workerSecret,"Content-Type":"application/json"},body:"{}"});
+}
+
+async function enqueueTwitchChatResponse(
+  eventKey: "command_response" | "moderator_feedback",
+  payload: Record<string, unknown>,
+  dedupeKey: string,
+) {
+  const { error } = await serviceClient().from("bot_outbox").insert({
+    event_key: eventKey,
+    target_platform: "TWITCH",
+    payload,
+    rendered_message: "{{message}}",
+    dedupe_key: dedupeKey,
+  });
+  if (error && error.code !== "23505") throw error;
 }
 
 async function handleCommand(event: TwitchEvent) {
@@ -62,7 +76,7 @@ async function handleCommand(event: TwitchEvent) {
   const isBroadcaster = event.chatter_user_id === event.broadcaster_user_id;
   const isModerator = isBroadcaster || badges.some((badge) => badge.set_id === "moderator");
   const sendModeratorFeedback=async(message:string)=>{
-    await supabase.rpc("enqueue_bot_event",{p_event_key:"moderator_feedback",p_payload:{message,user:event.chatter_user_login,command:commandName.toLowerCase(),source_message_id:event.message_id,platform:"TWITCH"},p_dedupe_key:`twitch-command:${event.message_id}`});
+    await enqueueTwitchChatResponse("moderator_feedback",{message,user:event.chatter_user_login,command:commandName.toLowerCase(),source_message_id:event.message_id,platform:"TWITCH"},`twitch-command:${event.message_id}`);
     const workerSecret=Deno.env.get("BOT_WORKER_SECRET"),projectUrl=Deno.env.get("SUPABASE_URL");
     if(workerSecret&&projectUrl)await fetch(`${projectUrl}/functions/v1/twitch-worker`,{method:"POST",headers:{"x-worker-secret":workerSecret,"Content-Type":"application/json"},body:"{}"});
   };
@@ -85,9 +99,23 @@ async function handleCommand(event: TwitchEvent) {
     }
     await sendModeratorFeedback(feedback);return;
   }
-  const { data: command } = await supabase.from("bot_commands").select("*").eq("command", commandName.toLowerCase()).eq("enabled", true).maybeSingle();
+  const { data: exactCommand } = await supabase.from("bot_commands").select("*").eq("command", commandName.toLowerCase()).eq("enabled", true).maybeSingle();
+  let command=exactCommand;
+  if(!command){
+    const {data:aliasCommand}=await supabase.from("bot_commands").select("*").contains("aliases",[commandName.toLowerCase()]).eq("enabled",true).limit(1).maybeSingle();
+    command=aliasCommand;
+  }
   if (!command) return;
   if(command.platform_scope==="KICK")return;
+  if((command.run_when??"always")!=="always"){
+    const {data:streamStatus}=await supabase.from("platform_events").select("event_type").eq("platform","TWITCH").in("event_type",["stream.online","stream.offline"]).order("occurred_at",{ascending:false}).limit(1).maybeSingle();
+    const streamLive=streamStatus?.event_type==="stream.online";
+    const statusAllowed=command.run_when==="online"?streamLive:!streamLive;
+    if(!statusAllowed){
+      await supabase.from("bot_command_events").insert({command_id:command.id,command:command.command,platform:"TWITCH",platform_user_id:event.chatter_user_id,username:event.chatter_user_login,arguments:argumentsList.join(" "),outcome:"denied",metadata:{trigger:commandName,reason:"stream_status",run_when:command.run_when,is_live:streamLive}});
+      return;
+    }
+  }
   const isSubscriber = badges.some((badge) => badge.set_id === "subscriber");
   let isFollower = isSubscriber || isModerator || badges.some((badge) => badge.set_id === "founder");
   if (command.permission === "follower" && !isFollower) {
@@ -102,27 +130,30 @@ async function handleCommand(event: TwitchEvent) {
     || (command.permission === "subscriber" && isSubscriber)
     || (command.permission === "moderator" && isModerator)
     || (command.permission === "broadcaster" && isBroadcaster);
-  if (!allowed) return;
+  if (!allowed) {
+    await supabase.from("bot_command_events").insert({command_id:command.id,command:command.command,platform:"TWITCH",platform_user_id:event.chatter_user_id,username:event.chatter_user_login,arguments:argumentsList.join(" "),outcome:"denied",metadata:{trigger:commandName,reason:"permission",permission:command.permission}});
+    return;
+  }
 
   const { data: usage } = await supabase.from("bot_command_usage").select("used_at")
     .eq("platform", "TWITCH").eq("command_id", command.id).eq("platform_user_id", event.chatter_user_id).maybeSingle();
   if (usage && Date.now() - Date.parse(usage.used_at) < command.cooldown_seconds * 1000) {
-    await supabase.from("bot_command_events").insert({command_id:command.id,command:command.command,platform:"TWITCH",platform_user_id:event.chatter_user_id,username:event.chatter_user_login,arguments:argumentsList.join(" "),outcome:"cooldown"});
+    await supabase.from("bot_command_events").insert({command_id:command.id,command:command.command,platform:"TWITCH",platform_user_id:event.chatter_user_id,username:event.chatter_user_login,arguments:argumentsList.join(" "),outcome:"cooldown",metadata:{trigger:commandName,scope:"user"}});
     return;
   }
   if(Number(command.global_cooldown_seconds)>0){
     const {data:globalUsage}=await supabase.from("bot_command_global_usage").select("used_at").eq("platform","TWITCH").eq("command_id",command.id).maybeSingle();
-    if(globalUsage&&Date.now()-Date.parse(globalUsage.used_at)<Number(command.global_cooldown_seconds)*1000)return;
+    if(globalUsage&&Date.now()-Date.parse(globalUsage.used_at)<Number(command.global_cooldown_seconds)*1000){await supabase.from("bot_command_events").insert({command_id:command.id,command:command.command,platform:"TWITCH",platform_user_id:event.chatter_user_id,username:event.chatter_user_login,arguments:argumentsList.join(" "),outcome:"cooldown",metadata:{trigger:commandName,scope:"global"}});return;}
     await supabase.from("bot_command_global_usage").upsert({platform:"TWITCH",command_id:command.id,used_at:new Date().toISOString()});
   }
   await supabase.from("bot_command_usage").upsert({ platform:"TWITCH",command_id:command.id,platform_user_id:event.chatter_user_id,used_at:new Date().toISOString() });
 
   const respondToModerator = async (message: string) => {
-    await supabase.rpc("enqueue_bot_event", {
-      p_event_key:"moderator_feedback",
-      p_payload:{message,user:event.chatter_user_login,command:command.command,source_message_id:event.message_id,platform:"TWITCH"},
-      p_dedupe_key:`twitch-command:${event.message_id}`,
-    });
+    await enqueueTwitchChatResponse(
+      "moderator_feedback",
+      {message,user:event.chatter_user_login,command:command.command,source_message_id:event.message_id,platform:"TWITCH"},
+      `twitch-command:${event.message_id}`,
+    );
     const workerSecret = Deno.env.get("BOT_WORKER_SECRET");
     const projectUrl = Deno.env.get("SUPABASE_URL");
     if (workerSecret && projectUrl) await fetch(`${projectUrl}/functions/v1/twitch-worker`, { method:"POST",headers:{"x-worker-secret":workerSecret,"Content-Type":"application/json"},body:"{}" });
@@ -239,15 +270,15 @@ async function handleCommand(event: TwitchEvent) {
   }
 
   if(command.command==="!comandos"){
-    const {data:activeCommands}=await supabase.from("bot_commands").select("command").eq("enabled",true).in("permission",["everyone","follower","subscriber"]).order("sort_order");
+    const {data:activeCommands}=await supabase.from("bot_commands").select("command").eq("enabled",true).eq("hidden_from_public",false).in("permission",["everyone","follower","subscriber"]).order("sort_order");
     const commandList=(activeCommands??[]).map((item)=>item.command).join(", ")||"nenhum por enquanto";
     const configuredTemplate=command.response_template.trim()||"Comandos na mochila: {{commands}}. Use com moderação ou sem nenhuma.";
     const message=configuredTemplate.includes("{{commands}}")?configuredTemplate.replaceAll("{{commands}}",commandList):`${configuredTemplate} ${commandList}`;
-    await supabase.rpc("enqueue_bot_event",{
-      p_event_key:"command_response",
-      p_payload:{message,user:event.chatter_user_login,display_name:event.chatter_user_name,command:command.command,source_message_id:event.message_id,platform:"TWITCH"},
-      p_dedupe_key:`twitch-command:${event.message_id}`,
-    });
+    await enqueueTwitchChatResponse(
+      "command_response",
+      {message,user:event.chatter_user_login,display_name:event.chatter_user_name,command:command.command,source_message_id:event.message_id,platform:"TWITCH"},
+      `twitch-command:${event.message_id}`,
+    );
     const workerSecret=Deno.env.get("BOT_WORKER_SECRET");
     const projectUrl=Deno.env.get("SUPABASE_URL");
     if(workerSecret&&projectUrl)await fetch(`${projectUrl}/functions/v1/twitch-worker`,{method:"POST",headers:{"x-worker-secret":workerSecret,"Content-Type":"application/json"},body:"{}"});
@@ -262,7 +293,9 @@ async function handleCommand(event: TwitchEvent) {
     rank = String((count ?? 0) + 1);
   }
   const { data: birthdayPlayers } = await supabase.from("community_birthdays_today").select("username");
-  let dynamicMessage=command.response_template;
+  let dynamicMessage=command.command==="!lurk"
+    ? "@{{display_name}} ativou o modo lurk pela {{user_count}}ª vez hoje. Presente, silencioso e oficialmente contabilizado."
+    : command.response_template;
   let dynamicRandom=String(crypto.getRandomValues(new Uint32Array(1))[0]%101);
   let dynamicChoice=argumentsList.join(" ").trim();
   let dynamicCounter="0";
@@ -301,6 +334,7 @@ async function handleCommand(event: TwitchEvent) {
   }
   const responsePayload = {
     message:dynamicMessage,user:event.chatter_user_login,display_name:event.chatter_user_name,
+    delivery_mode:command.delivery_mode??"message",announcement_color:command.announcement_color??"primary",
     command:command.command,arguments:argumentsList.join(" "),source_message_id:event.message_id,
     target:String(argumentsList[0] ?? event.chatter_user_login).replace(/^@/,""),random_number:dynamicRandom,random_response:dynamicMessage,choice:dynamicChoice,counter_value:dynamicCounter,user_count:dynamicUserCount,value:dynamicCounter,
     profile_url:`https://thenees.com.br/jogar?player=${encodeURIComponent(event.chatter_user_login)}`,
@@ -308,7 +342,7 @@ async function handleCommand(event: TwitchEvent) {
     birthday_users:(birthdayPlayers ?? []).map((item) => `@${item.username}`).join(", ") || "nenhum jogador hoje",platform:"TWITCH",
   };
   if (command.command === "!comandos") {
-    const { data: activeCommands } = await supabase.from("bot_commands").select("command").eq("enabled",true).in("permission",["everyone","follower","subscriber"]).order("sort_order");
+    const { data: activeCommands } = await supabase.from("bot_commands").select("command").eq("enabled",true).eq("hidden_from_public",false).in("permission",["everyone","follower","subscriber"]).order("sort_order");
     const commandList=(activeCommands??[]).map((item)=>item.command).join(", ")||"nenhum por enquanto";
     const configuredTemplate=command.response_template.trim()||"Comandos na mochila: {{commands}}. Use com moderação ou sem nenhuma.";
     responsePayload.message=configuredTemplate.includes("{{commands}}")?configuredTemplate.replaceAll("{{commands}}",commandList):`${configuredTemplate} ${commandList}`;
@@ -326,11 +360,9 @@ async function handleCommand(event: TwitchEvent) {
       const chosen=quotes?.length?quotes[Math.floor(Math.random()*quotes.length)]:null;
       responsePayload.message=chosen?`Quote #${chosen.quote_number}: “${chosen.quote_text}” — @${chosen.author_name}`:"O arquivo de quotes está mais vazio que promessa de segunda-feira.";
     }
-    await supabase.rpc("enqueue_bot_event", { p_event_key:"command_response",p_payload:responsePayload,p_dedupe_key:`twitch-command:${event.message_id}` });
-  } else {
-    await supabase.rpc("enqueue_bot_event", { p_event_key:"command_response",p_payload:responsePayload,p_dedupe_key:`twitch-command:${event.message_id}` });
   }
-  await supabase.from("bot_command_events").insert({command_id:command.id,command:command.command,platform:"TWITCH",platform_user_id:event.chatter_user_id,username:event.chatter_user_login,arguments:argumentsList.join(" "),outcome:"sent",metadata:{command_type:effectiveCommandType??"text"}});
+  await enqueueTwitchChatResponse("command_response",responsePayload,`twitch-command:${event.message_id}`);
+  await supabase.from("bot_command_events").insert({command_id:command.id,command:command.command,platform:"TWITCH",platform_user_id:event.chatter_user_id,username:event.chatter_user_login,arguments:argumentsList.join(" "),outcome:"sent",metadata:{trigger:commandName,command_type:effectiveCommandType??"text"}});
 
   const workerSecret = Deno.env.get("BOT_WORKER_SECRET");
   const projectUrl = Deno.env.get("SUPABASE_URL");
@@ -344,14 +376,19 @@ async function processEvent(type: string, event: TwitchEvent, messageId: string)
   const { error } = await supabase.from("platform_events").insert({ platform:"TWITCH",external_event_id:messageId,event_type:type,payload:event,occurred_at:new Date().toISOString() });
   if (error?.code === "23505") return;
   if (type === "channel.chat.message") {
-    await greetFirstChatMessage(event);
+    await queueConfiguredWelcome(event);
     await handleCommand(event);
   }
-  if (type === "channel.follow") await supabase.rpc("enqueue_bot_event",{p_event_key:"follow_received",p_payload:{message:`@${event.user_login} seguiu o canal. Energia coletiva +8%.`,user:event.user_login,event_type:"follow",platform:"TWITCH"},p_dedupe_key:`twitch-follow:${messageId}`});
-  if (["channel.subscribe","channel.subscription.message"].includes(type)) await supabase.rpc("enqueue_bot_event",{p_event_key:"sub_received",p_payload:{message:`@${event.user_login} virou sub. Buff de grupo desbloqueado!`,user:event.user_login,event_type:"sub",tier:event.tier,platform:"TWITCH"},p_dedupe_key:`twitch-sub:${messageId}`});
-  if (type === "channel.cheer") await supabase.rpc("enqueue_bot_event",{p_event_key:"bits_received",p_payload:{message:`@${event.user_login??"anônimo"} enviou ${event.bits} bits. Medidor de caos carregado!`,user:event.user_login,event_type:"bits",bits:event.bits,platform:"TWITCH"},p_dedupe_key:`twitch-bits:${messageId}`});
-  if (type === "stream.online") await supabase.rpc("enqueue_bot_event",{p_event_key:"live_started",p_payload:{platform:"TWITCH",live_url:"https://www.twitch.tv/thenees"},p_dedupe_key:`twitch-live:${event.id}`});
+  if (type === "channel.follow") await supabase.rpc("enqueue_bot_event",{p_event_key:"follow_received",p_payload:{user:event.user_login,username:event.user_login,display_name:event.user_name,event_type:"follow",platform:"TWITCH"},p_dedupe_key:`twitch-follow:${messageId}`});
+  if (type === "channel.subscribe") await supabase.rpc("enqueue_bot_event",{p_event_key:"sub_received",p_payload:{user:event.user_login,username:event.user_login,display_name:event.user_name,event_type:"sub",tier:event.tier,platform:"TWITCH"},p_dedupe_key:`twitch-sub:${messageId}`});
+  if (type === "channel.subscription.message") await supabase.rpc("enqueue_bot_event",{p_event_key:"sub_message_received",p_payload:{user:event.user_login,username:event.user_login,display_name:event.user_name,event_type:"sub_message",tier:event.tier,message:event.message?.text??"",months:event.cumulative_months??event.duration_months??0,platform:"TWITCH"},p_dedupe_key:`twitch-sub-message:${messageId}`});
+  if (type === "channel.cheer") await supabase.rpc("enqueue_bot_event",{p_event_key:"bits_received",p_payload:{user:event.user_login??"anônimo",username:event.user_login??"anônimo",display_name:event.user_name??"Anônimo",event_type:"bits",bits:event.bits,platform:"TWITCH"},p_dedupe_key:`twitch-bits:${messageId}`});
+  if (type === "channel.raid") await supabase.rpc("enqueue_bot_event",{p_event_key:"raid_received",p_payload:{user:event.from_broadcaster_user_login??event.from_broadcaster_user_name,username:event.from_broadcaster_user_login??event.from_broadcaster_user_name,display_name:event.from_broadcaster_user_name,viewers:event.viewers??0,event_type:"raid",platform:"TWITCH"},p_dedupe_key:`twitch-raid:${messageId}`});
   await supabase.from("platform_events").update({processed:true}).eq("platform","TWITCH").eq("external_event_id",messageId);
+  if(["channel.follow","channel.subscribe","channel.subscription.message","channel.cheer","channel.raid"].includes(type)){
+    const workerSecret=Deno.env.get("BOT_WORKER_SECRET"),projectUrl=Deno.env.get("SUPABASE_URL");
+    if(workerSecret&&projectUrl)await fetch(`${projectUrl}/functions/v1/twitch-worker`,{method:"POST",headers:{"x-worker-secret":workerSecret,"Content-Type":"application/json"},body:"{}"});
+  }
 }
 
 Deno.serve(async (request) => {
@@ -361,7 +398,17 @@ Deno.serve(async (request) => {
   const body = JSON.parse(rawBody);
   const messageType = request.headers.get("twitch-eventsub-message-type");
   if (messageType === "webhook_callback_verification") {
-    await serviceClient().from("twitch_eventsub_subscriptions").update({status:"enabled",updated_at:new Date().toISOString()}).eq("id",body.subscription?.id);
+    const subscription=body.subscription??{};
+    await serviceClient().from("twitch_eventsub_subscriptions").upsert({
+      id:subscription.id,
+      subscription_type:subscription.type,
+      version:subscription.version,
+      status:"enabled",
+      cost:subscription.cost??0,
+      condition:subscription.condition??{},
+      created_at:subscription.created_at??new Date().toISOString(),
+      updated_at:new Date().toISOString(),
+    });
     await serviceClient().from("platform_integrations").update({eventsub_status:"active",last_error:null,updated_at:new Date().toISOString()}).eq("platform","TWITCH");
     return new Response(body.challenge, { status: 200, headers: { "Content-Type":"text/plain", "Content-Length":String(new TextEncoder().encode(body.challenge).length) } });
   }

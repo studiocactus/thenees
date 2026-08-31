@@ -4,6 +4,7 @@ import { requireAdmin, serviceClient } from "../_shared/supabase.ts";
 
 const events = [
   "chat.message.sent",
+  "livestream.status.updated",
   "channel.followed",
   "channel.subscription.new",
   "channel.subscription.renewal",

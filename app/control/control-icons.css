@@ -1,0 +1,45 @@
+.control-editor-actions a,
+.control-editor-actions button,
+.control-bot-module-grid span,
+.control-command-delivery-page aside button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.control-editor-actions svg,
+.control-bot-module-grid svg,
+.control-command-delivery-page aside button svg {
+  flex: 0 0 auto;
+}
+
+.control-bot-module-grid > button > i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.control-workspace button:has(> svg),
+.control-workspace button:has(> span > svg),
+.control-command-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.control-command-toolbar label > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.control-outbox-source-filters { background: #0b0c0f; }
+.control-bot-outbox small.error {
+  max-width: 680px;
+  overflow: hidden;
+  color: #ff8585;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
