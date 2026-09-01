@@ -1,6 +1,7 @@
 import { corsHeaders, json } from "../_shared/cors.ts";
 import { requireAdmin, serviceClient } from "../_shared/supabase.ts";
 import { getTwitchToken, renderTemplate } from "../_shared/twitch.ts";
+import { MAX_DELIVERY_ATTEMPTS, isTransientDeliveryError, parseRetryAfterSeconds, retryDelaySeconds } from "../_shared/outboxRetry.ts";
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -25,7 +26,7 @@ Deno.serve(async (request) => {
   const freshSince=new Date(Date.now()-2*60*1000).toISOString();
   // Outbound policy: explicit !commands, configured timers and recognized
   // platform events may write to chat. Generic chat activity never may.
-  const {data:commandItems,error:commandError}=await supabase.from("bot_outbox").select("*").in("target_platform",["TWITCH","BOTH"]).in("event_key",["command_response","moderator_feedback"]).eq("status","pending").gte("created_at",freshSince).lte("available_at",now).order("created_at",{ascending:false}).limit(10);
+  const {data:commandItems,error:commandError}=await supabase.from("bot_outbox").select("*").in("target_platform",["TWITCH","BOTH"]).in("event_key",["command_response","moderator_feedback"]).eq("status","pending").or(`created_at.gte.${freshSince},attempts.gt.0`).lte("available_at",now).order("created_at",{ascending:false}).limit(10);
   if(commandError)return json({error:commandError.message},500);
   const forTwitch=(items:Record<string,unknown>[]|null|undefined)=>(items??[]).filter((item)=>{
     const payloadPlatform=String((item.payload as Record<string,unknown>)?.platform??"");
@@ -36,7 +37,7 @@ Deno.serve(async (request) => {
   if(timerError)return json({error:timerError.message},500);
   const allowedAutomaticEvents=["special_viewer_message","follow_received","sub_received","sub_message_received","bits_received","raid_received","birthday_today","live_started","quote_published","chatbattle_event","player_registered","first_chat_message"];
   const matchingTimerItems=forTwitch(timerItems);
-  const {data:eventItems,error:eventError}=matchingCommandItems.length||matchingTimerItems.length?{data:[],error:null}:await supabase.from("bot_outbox").select("*").in("target_platform",["TWITCH","BOTH"]).in("event_key",allowedAutomaticEvents).eq("status","pending").gte("created_at",freshSince).lte("available_at",now).order("created_at",{ascending:false}).limit(10);
+  const {data:eventItems,error:eventError}=matchingCommandItems.length||matchingTimerItems.length?{data:[],error:null}:await supabase.from("bot_outbox").select("*").in("target_platform",["TWITCH","BOTH"]).in("event_key",allowedAutomaticEvents).eq("status","pending").or(`created_at.gte.${freshSince},attempts.gt.0`).lte("available_at",now).order("created_at",{ascending:false}).limit(10);
   if(eventError)return json({error:eventError.message},500);
   const matchingEventItems=forTwitch(eventItems);
   const items=(matchingCommandItems.length?matchingCommandItems:matchingTimerItems.length?matchingTimerItems:matchingEventItems).slice(0,1);
@@ -89,12 +90,16 @@ Deno.serve(async (request) => {
     const message=renderTemplate(isRequestedCommand?"{{message}}":item.rendered_message??"{{message}}",renderPayload,communityUrl);
     const deliveryMode=String((item.payload as Record<string,unknown>)?.delivery_mode??"message");
     const announcementColor=String((item.payload as Record<string,unknown>)?.announcement_color??"primary");
+    let retryAfterSeconds=0;
     try{
       const isAnnouncement=deliveryMode==="announcement";
       const endpoint=isAnnouncement?`https://api.twitch.tv/helix/chat/announcements?broadcaster_id=${encodeURIComponent(broadcasterId)}&moderator_id=${encodeURIComponent(botUserId)}`:"https://api.twitch.tv/helix/chat/messages";
       const body=isAnnouncement?{message,color:announcementColor}:{broadcaster_id:broadcasterId,sender_id:botUserId,message};
       const response=await fetch(endpoint,{method:"POST",headers:{Authorization:`Bearer ${token.access_token}`,"Client-Id":clientId,"Content-Type":"application/json"},body:JSON.stringify(body)});
-      if(!response.ok)throw new Error(`twitch_${response.status}:${await response.text()}`);
+      if(!response.ok){
+        retryAfterSeconds=parseRetryAfterSeconds(response);
+        throw new Error(`twitch_${response.status}:${await response.text()}`);
+      }
       const outcome=isAnnouncement?null:(await response.json()).data?.[0];
       if(!isAnnouncement&&!outcome?.is_sent)throw new Error(outcome?.drop_reason?.message??"message_not_sent");
       await supabase.from("bot_delivery_logs").insert({outbox_id:item.id,platform:"TWITCH",status:"sent",external_message_id:outcome?.message_id??null});
@@ -104,8 +109,10 @@ Deno.serve(async (request) => {
     }catch(error){
       const messageError=String(error).slice(0,1000);
       await supabase.from("bot_delivery_logs").insert({outbox_id:item.id,platform:"TWITCH",status:"failed",error_message:messageError});
-      await supabase.from("bot_outbox").update({status:"failed",last_error:messageError,available_at:new Date(Date.now()+Math.min(3600,2**Number(item.attempts)*30)*1000).toISOString()}).eq("id",item.id);
-      results.push({id:item.id,status:"failed"});
+      const shouldRetry=isTransientDeliveryError(error)&&Number(item.attempts)<MAX_DELIVERY_ATTEMPTS;
+      const retryAt=new Date(Date.now()+retryDelaySeconds(Number(item.attempts),retryAfterSeconds)*1000).toISOString();
+      await supabase.from("bot_outbox").update({status:shouldRetry?"pending":"failed",processed_at:shouldRetry?null:new Date().toISOString(),last_error:messageError,available_at:retryAt}).eq("id",item.id);
+      results.push({id:item.id,status:shouldRetry?"retrying":"failed",attempts:item.attempts,available_at:shouldRetry?retryAt:null});
     }
   }
   return json({processed:results.length,results});

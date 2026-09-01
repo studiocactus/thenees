@@ -7858,7 +7858,9 @@ export default function ControlPage() {
                           {item.last_error && <small className="error" title={item.last_error}>{item.last_error}</small>}
                         </span>
                         <strong className={item.status}>
-                          {item.status.toUpperCase()}
+                          {item.status === "pending" && item.attempts > 0 && item.last_error
+                            ? "RECUPERANDO"
+                            : item.status.toUpperCase()}
                         </strong>
                         <em>{item.attempts} TENTATIVAS</em>
                         {item.status === "failed" && (

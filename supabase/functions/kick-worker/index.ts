@@ -2,6 +2,7 @@ import { corsHeaders, json } from "../_shared/cors.ts";
 import { getKickToken, kickFetch } from "../_shared/kick.ts";
 import { requireAdmin, serviceClient } from "../_shared/supabase.ts";
 import { renderTemplate } from "../_shared/twitch.ts";
+import { MAX_DELIVERY_ATTEMPTS, isTransientDeliveryError, retryDelaySeconds } from "../_shared/outboxRetry.ts";
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers:corsHeaders });
@@ -19,7 +20,7 @@ Deno.serve(async (request) => {
   // an old backlog (or previously failed records) from flooding the live chat.
   const now=new Date().toISOString();
   const freshSince=new Date(Date.now()-2*60*1000).toISOString();
-  const {data:commandItems,error:commandError}=await supabase.from("bot_outbox").select("*").in("target_platform",["KICK","BOTH"]).in("event_key",["command_response","moderator_feedback"]).eq("status","pending").gte("created_at",freshSince).lte("available_at",now).order("created_at",{ascending:false}).limit(10);
+  const {data:commandItems,error:commandError}=await supabase.from("bot_outbox").select("*").in("target_platform",["KICK","BOTH"]).in("event_key",["command_response","moderator_feedback"]).eq("status","pending").or(`created_at.gte.${freshSince},attempts.gt.0`).lte("available_at",now).order("created_at",{ascending:false}).limit(10);
   if(commandError)return json({error:commandError.message},500);
   const forKick=(items:Record<string,unknown>[]|null|undefined)=>(items??[]).filter((item)=>{
     const payloadPlatform=String((item.payload as Record<string,unknown>)?.platform??"");
@@ -32,7 +33,7 @@ Deno.serve(async (request) => {
   // configured welcomes and recognized platform events.
   const allowedAutomaticEvents=["special_viewer_message","follow_received","sub_received","sub_message_received","bits_received","raid_received","birthday_today","live_started","quote_published","chatbattle_event","player_registered","first_chat_message"];
   const matchingTimerItems=forKick(timerItems);
-  const {data:eventItems,error:eventError}=matchingCommandItems.length||matchingTimerItems.length?{data:[],error:null}:await supabase.from("bot_outbox").select("*").in("target_platform",["KICK","BOTH"]).in("event_key",allowedAutomaticEvents).eq("status","pending").gte("created_at",freshSince).lte("available_at",now).order("created_at",{ascending:false}).limit(10);
+  const {data:eventItems,error:eventError}=matchingCommandItems.length||matchingTimerItems.length?{data:[],error:null}:await supabase.from("bot_outbox").select("*").in("target_platform",["KICK","BOTH"]).in("event_key",allowedAutomaticEvents).eq("status","pending").or(`created_at.gte.${freshSince},attempts.gt.0`).lte("available_at",now).order("created_at",{ascending:false}).limit(10);
   if(eventError)return json({error:eventError.message},500);
   const matchingEventItems=forKick(eventItems);
   const items=(matchingCommandItems.length?matchingCommandItems:matchingTimerItems.length?matchingTimerItems:matchingEventItems).slice(0,1);
@@ -98,9 +99,11 @@ Deno.serve(async (request) => {
       const reason=String(error).slice(0,1000);
       console.error("kick_delivery_failed",{outbox_id:item.id,error:reason});
       await supabase.from("bot_delivery_logs").insert({outbox_id:item.id,platform:"KICK",status:"failed",error_message:reason});
-      await supabase.from("bot_outbox").update({status:"failed",last_error:reason,available_at:new Date(Date.now()+60000).toISOString()}).eq("id",item.id);
-      await supabase.from("platform_integrations").update({status:"error",last_error:reason,last_synced_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("platform","KICK");
-      results.push({id:item.id,status:"failed"});
+      const shouldRetry=isTransientDeliveryError(error)&&Number(item.attempts)<MAX_DELIVERY_ATTEMPTS;
+      const retryAt=new Date(Date.now()+retryDelaySeconds(Number(item.attempts))*1000).toISOString();
+      await supabase.from("bot_outbox").update({status:shouldRetry?"pending":"failed",processed_at:shouldRetry?null:new Date().toISOString(),last_error:reason,available_at:retryAt}).eq("id",item.id);
+      if(!shouldRetry)await supabase.from("platform_integrations").update({status:"error",last_error:reason,last_synced_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("platform","KICK");
+      results.push({id:item.id,status:shouldRetry?"retrying":"failed",attempts:item.attempts,available_at:shouldRetry?retryAt:null});
     }
   }
   return json({processed:results.length,results});
