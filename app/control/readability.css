@@ -1,12 +1,12 @@
 /* Control typography system — legibility takes priority over pixel density. */
 .control-dashboard-v2{
-  --control-type-meta:9px;
-  --control-type-ui:10px;
-  --control-type-body:11px;
+  --control-type-meta:10px;
+  --control-type-ui:11px;
+  --control-type-body:12px;
   --control-line-ui:1.55;
-  --control-line-body:1.75;
-  --control-text-muted:#a3a7ae;
-  --control-text-soft:#c4c6cb;
+  --control-line-body:1.7;
+  --control-text-muted:#b0b4bc;
+  --control-text-soft:#d0d2d7;
 }
 
 /* Navigation and persistent chrome */
@@ -33,6 +33,14 @@
 .control-dashboard-v2 section>header p{color:var(--control-text-muted)!important;font-size:var(--control-type-body)!important;line-height:var(--control-line-body)!important}
 .control-dashboard-v2 .control-editor-heading h2{line-height:.95!important}
 
+/* Secondary headings stay visibly distinct from labels and helper text. */
+.control-dashboard-v2 h3,
+.control-dashboard-v2 article>header b,
+.control-dashboard-v2 section>header b{
+  font-size:13px!important;
+  line-height:1.45!important;
+}
+
 /* Explanations, descriptions and helper copy */
 .control-dashboard-v2 article p,
 .control-dashboard-v2 aside p,
@@ -54,6 +62,13 @@
 .control-dashboard-v2 textarea,
 .control-dashboard-v2 code,
 .control-dashboard-v2 time{font-size:var(--control-type-ui)!important;line-height:var(--control-line-ui)!important}
+.control-dashboard-v2 input,
+.control-dashboard-v2 select,
+.control-dashboard-v2 textarea{
+  min-height:46px;
+  color:#f4f4ef!important;
+}
+.control-dashboard-v2 textarea{line-height:1.65!important}
 .control-dashboard-v2 label>small,
 .control-dashboard-v2 button small,
 .control-dashboard-v2 article small,
@@ -66,7 +81,6 @@
 
 /* Operational overview */
 .control-dashboard-v2 .control-live-overview-copy>small,
-.control-dashboard-v2 .control-live-overview-copy p,
 .control-dashboard-v2 .control-operations-grid header small,
 .control-dashboard-v2 .control-platform-board>button span small,
 .control-dashboard-v2 .control-platform-board>button strong,
@@ -76,6 +90,11 @@
 .control-dashboard-v2 .control-content-snapshot span,
 .control-dashboard-v2 .control-context-actions,
 .control-dashboard-v2 .control-recent-activity{font-size:var(--control-type-meta)!important;line-height:1.55!important}
+.control-dashboard-v2 .control-live-overview-copy p{
+  color:var(--control-text-muted)!important;
+  font-size:var(--control-type-body)!important;
+  line-height:var(--control-line-body)!important;
+}
 
 /* Improve contrast of previously low-contrast supporting text. */
 .control-dashboard-v2 small,
@@ -84,7 +103,25 @@
 .control-dashboard-v2 [class*="description"],
 .control-dashboard-v2 [class*="helper"]{color:var(--control-text-muted)}
 .control-dashboard-v2 input::placeholder,
-.control-dashboard-v2 textarea::placeholder{color:#777c84;opacity:1}
+.control-dashboard-v2 textarea::placeholder{color:#92969e;opacity:1}
+
+/* Dense rows and status cards previously escaped the shared scale. */
+.control-dashboard-v2 [class*="table-head"],
+.control-dashboard-v2 [class*="toolbar"] span,
+.control-dashboard-v2 [class*="toolbar"] label,
+.control-dashboard-v2 [class*="metric"] small,
+.control-dashboard-v2 [class*="status"] small,
+.control-dashboard-v2 [class*="list"] article span,
+.control-dashboard-v2 [class*="list"] article small{
+  font-size:var(--control-type-meta)!important;
+  line-height:1.55!important;
+}
+.control-dashboard-v2 [class*="list"] article p,
+.control-dashboard-v2 [class*="list"] article em,
+.control-dashboard-v2 [class*="list"] article code{
+  font-size:var(--control-type-ui)!important;
+  line-height:1.6!important;
+}
 
 /* Final title contract: Site, ArrobaSrv and administration areas share one rhythm. */
 .control-dashboard-v2 .control-editor-heading,
@@ -117,7 +154,7 @@
 .control-dashboard-v2 .control-command-heading h2,
 .control-dashboard-v2 .control-backend-heading h2{
   margin:20px 0 14px!important;
-  font-size:clamp(28px,2.4vw,34px)!important;
+  font-size:clamp(30px,2.6vw,38px)!important;
   line-height:.95!important;
 }
 .control-dashboard-v2 .control-command-heading h1,
@@ -262,8 +299,8 @@
 }
 
 @media(max-width:650px){
-  .control-dashboard-v2{--control-type-meta:9px;--control-type-ui:10px;--control-type-body:10px}
-  .control-dashboard-v2 button{min-height:42px}
+  .control-dashboard-v2{--control-type-meta:10px;--control-type-ui:11px;--control-type-body:12px}
+  .control-dashboard-v2 button{min-height:44px}
   .control-dashboard-v2 .control-editor-heading,
   .control-dashboard-v2 .control-section-heading,
   .control-dashboard-v2 .control-command-heading,
