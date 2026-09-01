@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Fragment,
   useEffect,
   useRef,
   useState,
@@ -837,16 +838,16 @@ const navigationGroups = [
     number: "03",
     title: "ARROBASRV",
     items: [
-      ["00", "OVERVIEW"],
-      ["01", "COMANDOS DO CHAT"],
-      ["09", "TIMERS DO CHAT"],
-      ["02", "QUOTES & MEMÓRIAS"],
-      ["03", "BOAS-VINDAS & AVISOS"],
+      ["00", "PAINEL DO BOT"],
+      ["01", "COMANDOS"],
+      ["09", "TIMERS"],
+      ["03", "AUTOMAÇÕES & EVENTOS"],
+      ["02", "QUOTES"],
+      ["06", "NOVO COMANDO"],
       ["04", "LINKS DO CHAT"],
-      ["05", "MANUAL DA MODERAÇÃO"],
-      ["06", "ADICIONAR COMANDO"],
-      ["07", "CONTADORES POR USUÁRIO"],
-      ["08", "CANAIS & STATUS"],
+      ["07", "CONTADORES"],
+      ["05", "GUIA DA MODERAÇÃO"],
+      ["08", "CONEXÕES & SAÚDE"],
     ],
   },
   {
@@ -997,6 +998,18 @@ const officialPlatformOptions = [
   "SPOTIFY",
   "LINKEDIN",
 ];
+const arrobaSrvMenuSections: Record<string, string> = {
+  "03-00": "CENTRAL",
+  "03-01": "MENSAGENS",
+  "03-09": "MENSAGENS",
+  "03-03": "MENSAGENS",
+  "03-02": "MENSAGENS",
+  "03-06": "FERRAMENTAS",
+  "03-04": "FERRAMENTAS",
+  "03-07": "FERRAMENTAS",
+  "03-05": "FERRAMENTAS",
+  "03-08": "OPERAÇÃO",
+};
 const defaultOfficialLinks: OfficialLinks = {
   twitch: "https://www.twitch.tv/thenees",
   kick: "https://kick.com/thenees",
@@ -4580,21 +4593,39 @@ export default function ControlPage() {
                 </i>
               </button>
               <div className="control-nav-children">
-                {group.items.map(([number, title]) => {
+                {group.items.map(([number, title], itemIndex) => {
                   const area = `${group.number}-${number}`;
                   const unavailable = unavailableControlAreas.has(area);
+                  const menuSection = arrobaSrvMenuSections[area];
+                  const previousArea =
+                    itemIndex > 0
+                      ? `${group.number}-${group.items[itemIndex - 1][0]}`
+                      : "";
+                  const showMenuSection =
+                    Boolean(menuSection) &&
+                    menuSection !== arrobaSrvMenuSections[previousArea];
                   return (
-                    <button
-                      className={`${selectedArea === area ? "selected " : ""}${unavailable ? "unavailable" : ""}`}
-                      type="button"
-                      disabled={unavailable}
-                      onClick={() => requestAreaChange(area)}
-                      key={area}
-                    >
-                      <span>{number}</span>
-                      {title}
-                      {unavailable && <small>EM BREVE</small>}
-                    </button>
+                    <Fragment key={area}>
+                      {showMenuSection && (
+                        <small className="control-nav-section-label">
+                          {menuSection}
+                        </small>
+                      )}
+                      <button
+                        className={`${selectedArea === area ? "selected " : ""}${unavailable ? "unavailable" : ""}`}
+                        type="button"
+                        disabled={unavailable}
+                        onClick={() => requestAreaChange(area)}
+                      >
+                        <span>
+                          {group.number === "03"
+                            ? String(itemIndex + 1).padStart(2, "0")
+                            : number}
+                        </span>
+                        {title}
+                        {unavailable && <small>EM BREVE</small>}
+                      </button>
+                    </Fragment>
                   );
                 })}
               </div>

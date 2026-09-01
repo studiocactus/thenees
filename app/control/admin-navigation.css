@@ -199,6 +199,17 @@
   color: #565961;
 }
 
+.control-nav-section-label {
+  margin: 12px 0 5px;
+  color: #777c84;
+  font: 8px/1.4 var(--font-pixel);
+  letter-spacing: .12em;
+}
+
+.control-nav-section-label:first-child {
+  margin-top: 4px;
+}
+
 .control-sidebar-footer {
   margin-top: auto;
   position: relative;
