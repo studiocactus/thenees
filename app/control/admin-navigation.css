@@ -57,6 +57,33 @@
   box-shadow:0 0 10px rgba(255,216,107,.55);
 }
 
+.control-user-area .control-unsaved-status.editing {
+  border-color:#7567ff;
+  background:rgba(117,103,255,.1);
+  color:#b5adff;
+}
+
+.control-user-area .control-unsaved-status.editing i {
+  background:#8f80ff;
+  box-shadow:0 0 10px rgba(143,128,255,.55);
+}
+
+.control-user-area .control-unsaved-status.saving {
+  border-color:#c5ff00;
+  background:rgba(197,255,0,.08);
+  color:#c5ff00;
+}
+
+.control-user-area .control-unsaved-status.saving i {
+  background:#c5ff00;
+  box-shadow:0 0 12px rgba(197,255,0,.65);
+  animation:control-save-status-pulse .9s ease-in-out infinite;
+}
+
+@keyframes control-save-status-pulse { 50% { opacity:.35;transform:scale(.72); } }
+
+@media(prefers-reduced-motion:reduce){.control-user-area .control-unsaved-status.saving i{animation:none}}
+
 .control-dashboard-v2 > .control-sidebar {
   padding: 0;
   gap: 0;

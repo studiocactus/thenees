@@ -1486,10 +1486,21 @@ export default function ControlPage() {
   );
   const previousSaveStates = useRef<Record<string, string>>({});
 
-  const markFormDirty = (formKey: string) =>
+  const markFormDirty = (formKey: string) => {
+    if (["hero"].includes(formKey)) setHeroSaveState("idle");
+    if (["profile"].includes(formKey)) setProfileSaveState("idle");
+    if (["schedule"].includes(formKey)) setScheduleSaveState("idle");
+    if (["content"].includes(formKey)) setContentSaveState("idle");
+    if (["links"].includes(formKey)) setLinksSaveState("idle");
+    if (["metrics", "quotes"].includes(formKey)) setCommunitySaveState("idle");
+    if (["media-kit", "partners"].includes(formKey)) setCommercialSaveState("idle");
+    if (["bot-core", "automations"].includes(formKey)) setBotSaveState("idle");
+    if (formKey === "chat-timers") setTimerSaveState("idle");
+    if (formKey === "short-links") setShortLinkState("idle");
     setDirtyForms((current) =>
       current.has(formKey) ? current : new Set(current).add(formKey),
     );
+  };
   const clearDirtyForms = (...formKeys: string[]) =>
     setDirtyForms((current) => {
       const next = new Set(current);
@@ -1563,21 +1574,23 @@ export default function ControlPage() {
     });
     if (!changed) return;
     const [, state, label] = changed;
+    if (state === "saving") {
+      setControlNotice((current) =>
+        current?.tone === "saving" ? null : current,
+      );
+      return;
+    }
     const tone =
-      state === "saving" ? "saving" : state === "saved" ? "success" : "error";
+      state === "saved" ? "success" : "error";
     setControlNotice({
       id: Date.now(),
       tone,
       title:
-        state === "saving"
-          ? "SALVANDO ALTERAÇÕES"
-          : state === "saved"
+        state === "saved"
             ? "ALTERAÇÕES SALVAS"
             : "NÃO FOI POSSÍVEL SALVAR",
       message:
-        state === "saving"
-          ? `${label}: enviando dados com segurança.`
-          : state === "saved"
+        state === "saved"
             ? `${label}: tudo atualizado.`
             : `${label}: revise os dados e tente novamente.`,
     });
@@ -2416,6 +2429,7 @@ export default function ControlPage() {
     if (timerDeliverySignature === lastTimerDeliverySnapshot.current) return;
     const supabase = getSupabaseBrowserClient();
     const updatedAt = new Date().toISOString();
+    setTimerSaveState("saving");
     void supabase
       .from("bot_chat_timers")
       .upsert(
@@ -4056,6 +4070,20 @@ export default function ControlPage() {
       ),
     }))
     .filter((group) => group.items.length > 0);
+  const isAnyControlSaveRunning = [
+    heroSaveState,
+    profileSaveState,
+    scheduleSaveState,
+    contentSaveState,
+    linksSaveState,
+    communitySaveState,
+    commercialSaveState,
+    botCommandCreateState,
+    specialViewerState,
+    botSaveState,
+    timerSaveState,
+    shortLinkState,
+  ].some((state) => state === "saving");
   const requestAreaChange = (nextArea: string) => {
     if (nextArea === selectedArea) {
       setMobileMenuOpen(false);
@@ -4484,11 +4512,17 @@ export default function ControlPage() {
           {mobileMenuOpen ? "FECHAR" : "MENU"}
         </button>
         <div className="control-user-area">
-          {dirtyForms.size > 0 && (
-            <span className="control-unsaved-status">
-              <i /> {dirtyForms.size} ALTERAÇÃO
-              {dirtyForms.size > 1 ? "ÕES" : ""} PENDENTE
-              {dirtyForms.size > 1 ? "S" : ""}
+          {(dirtyForms.size > 0 || isAnyControlSaveRunning) && (
+            <span
+              className={`control-unsaved-status${isAnyControlSaveRunning ? " saving" : controlFieldEditing ? " editing" : ""}`}
+              role="status"
+              aria-live="polite"
+            >
+              <i /> {isAnyControlSaveRunning
+                ? "SALVANDO ALTERAÇÕES"
+                : controlFieldEditing
+                  ? "EDITANDO · AUTOSAVE PAUSADO"
+                  : `${dirtyForms.size} ALTERAÇÃO${dirtyForms.size > 1 ? "ÕES" : ""} PENDENTE${dirtyForms.size > 1 ? "S" : ""}`}
             </span>
           )}
           <div className="control-user-copy">
@@ -4662,7 +4696,7 @@ export default function ControlPage() {
         className="control-workspace"
         onFocusCapture={(event) => {
           const target = event.target as HTMLElement;
-          if (!target.matches("input,textarea,[contenteditable='true']")) return;
+          if (!target.matches("input,textarea,select,[contenteditable='true']")) return;
           controlFieldEditingRef.current = true;
           setControlFieldEditing(true);
         }}
@@ -4671,7 +4705,7 @@ export default function ControlPage() {
             const active = document.activeElement as HTMLElement | null;
             if (
               active?.closest(".control-workspace") &&
-              active.matches("input,textarea,[contenteditable='true']")
+              active.matches("input,textarea,select,[contenteditable='true']")
             )
               return;
             controlFieldEditingRef.current = false;
