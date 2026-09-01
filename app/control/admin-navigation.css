@@ -139,6 +139,10 @@
   display: block;
 }
 
+.control-sidebar nav span {
+  margin: 0 !important;
+}
+
 .control-sidebar nav section {
   border-bottom: 1px solid #292b30;
   position: relative;
@@ -165,7 +169,6 @@
   color: #666a71;
   font-size: 8px;
   line-height: 1;
-  transform: translateY(7px);
   transition: color .22s ease;
 }
 
@@ -357,7 +360,6 @@
   color: #565961;
   font-size: 7px;
   line-height: 1;
-  transform: translateY(7px);
 }
 
 .control-nav-section-label {
@@ -383,7 +385,6 @@
   width:auto;
   color:inherit;
   line-height:1;
-  transform:translateY(1px);
 }
 
 .control-nav-section-label:first-child {
