@@ -1244,6 +1244,7 @@ export default function ControlPage() {
   // Navigation ids are data-driven and may expand without changing this component.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedArea, setSelectedArea] = useState<any>("00-01");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
     schedule: null,
     quotes: null,
@@ -4039,7 +4040,10 @@ export default function ControlPage() {
     }))
     .filter((group) => group.items.length > 0);
   const requestAreaChange = (nextArea: string) => {
-    if (nextArea === selectedArea) return;
+    if (nextArea === selectedArea) {
+      setMobileMenuOpen(false);
+      return;
+    }
     if (
       dirtyForms.size > 0 &&
       !window.confirm(
@@ -4049,6 +4053,7 @@ export default function ControlPage() {
       return;
     setDirtyForms(new Set());
     setSelectedArea(nextArea);
+    setMobileMenuOpen(false);
   };
   const twitchIntegration = platformIntegrations.find(
     (item) => item.platform === "TWITCH",
@@ -4451,6 +4456,16 @@ export default function ControlPage() {
         <div className="control-login-brand">
           THENEES<span>°</span> CONTROL
         </div>
+        <button
+          className="control-mobile-menu-toggle"
+          type="button"
+          aria-controls="control-main-navigation"
+          aria-expanded={mobileMenuOpen}
+          onClick={() => setMobileMenuOpen((open) => !open)}
+        >
+          <span aria-hidden="true">{mobileMenuOpen ? "×" : "☰"}</span>
+          {mobileMenuOpen ? "FECHAR" : "MENU"}
+        </button>
         <div className="control-user-area">
           {dirtyForms.size > 0 && (
             <span className="control-unsaved-status">
@@ -4513,7 +4528,18 @@ export default function ControlPage() {
           </button>
         </div>
       )}
-      <aside className="control-sidebar">
+      {mobileMenuOpen && (
+        <button
+          className="control-mobile-menu-backdrop"
+          type="button"
+          aria-label="Fechar menu"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+      <aside
+        className={`control-sidebar${mobileMenuOpen ? " mobile-open" : ""}`}
+        id="control-main-navigation"
+      >
         <div className="control-sidebar-intro">
           <small>PAINEL DE CONTROLE</small>
           <b>ORGANIZE O CAOS.</b>

@@ -10,6 +10,11 @@
   background: #0b0c0f;
 }
 
+.control-mobile-menu-toggle,
+.control-mobile-menu-backdrop {
+  display: none;
+}
+
 .control-user-area,
 .control-user-copy {
   display: flex;
@@ -345,78 +350,141 @@
 @media (max-width: 820px) {
   .control-dashboard-v2 {
     grid-template-columns: 1fr;
+    grid-template-rows: 64px minmax(0, 1fr);
   }
 
   .control-dashboard-v2.has-operational-alert {
-    grid-template-rows: 64px auto auto minmax(0, 1fr);
+    grid-template-rows: 64px auto minmax(0, 1fr);
+  }
+
+  .control-dashboard-v2 > header {
+    position: sticky;
+    z-index: 40;
+    top: 0;
+    gap: 12px;
   }
 
   .control-user-copy {
     display: none;
   }
 
-  .control-dashboard-v2 > .control-sidebar {
-    position: relative;
-    min-height: 106px;
-    padding: 0 0 52px;
-    display: block;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-color: #c5ff00 #151619;
+  .control-user-area > span,
+  .control-user-area > button {
+    display: none;
   }
 
-  .control-sidebar-intro,
-  .control-sidebar-footer {
-    display: none !important;
+  .control-mobile-menu-toggle {
+    min-width: 96px;
+    min-height: 44px;
+    margin-left: auto;
+    padding: 0 13px !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    border-color: #c5ff00 !important;
+    color: #c5ff00 !important;
+  }
+
+  .control-mobile-menu-toggle span {
+    display: inline !important;
+    margin: 0;
+    color: inherit;
+    font: 18px/1 sans-serif;
+  }
+
+  .control-mobile-menu-backdrop {
+    position: fixed;
+    z-index: 48;
+    inset: 64px 0 0;
+    width: 100%;
+    border: 0;
+    display: block;
+    background: rgba(3, 4, 6, .76);
+    backdrop-filter: blur(2px);
+    cursor: pointer;
+  }
+
+  .control-dashboard-v2 > .control-sidebar {
+    position: fixed;
+    z-index: 50;
+    top: 64px;
+    bottom: 0;
+    left: 0;
+    width: min(88vw, 350px);
+    min-height: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border-right: 1px solid #454850;
+    border-bottom: 0;
+    box-shadow: 18px 0 45px rgba(0,0,0,.45);
+    transform: translateX(-105%);
+    visibility: hidden;
+    transition: transform .24s cubic-bezier(.22,1,.36,1), visibility .24s;
+  }
+
+  .control-dashboard-v2 > .control-sidebar.mobile-open {
+    transform: translateX(0);
+    visibility: visible;
+  }
+
+  .control-sidebar-intro {
+    display: block;
+    padding: 20px;
   }
 
   .control-sidebar nav {
-    display: flex;
-    min-width: max-content;
-    scroll-snap-type: x proximity;
+    display: block;
+    min-width: 0;
   }
 
   .control-sidebar nav section {
-    flex: 0 0 138px;
-    border-right: 1px solid #292b30;
-    border-bottom: 0;
-    scroll-snap-align: start;
+    border-right: 0;
+    border-bottom: 1px solid #292b30;
   }
 
   .control-sidebar .control-nav-category {
     width: 100%;
-    min-height: 54px;
-    grid-template-columns: 24px auto;
-    padding: 0 17px;
-    font-size: 8px;
-    white-space: nowrap;
+    min-height: 58px;
+    grid-template-columns: 30px 1fr 16px;
+    padding: 0 20px;
+    font-size: 10px;
+    white-space: normal;
   }
 
   .control-nav-category i {
-    display: none;
+    display: block;
   }
 
   .control-sidebar nav section.active .control-nav-children {
-    position: absolute;
-    z-index: 3;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 52px;
-    padding: 0 12px;
-    display: flex !important;
-    align-items: center;
-    gap: 18px;
-    overflow-x: auto;
+    position: static;
+    height: auto;
+    padding: 8px 18px 14px 50px;
+    display: grid !important;
+    gap: 0;
+    overflow: visible;
     background: #111216;
-    border-top: 1px solid #34363b;
-    animation: none;
+    border-top: 0;
+    animation: control-nav-reveal .24s cubic-bezier(.22,1,.36,1) both;
   }
 
   .control-dashboard-v2 > .control-sidebar .control-nav-children button {
-    flex: 0 0 auto;
-    padding: 12px 0;
-    white-space: nowrap;
+    min-height: 44px;
+    padding: 10px 0;
+    white-space: normal;
+  }
+
+  .control-sidebar-footer {
+    display: grid !important;
+  }
+
+  .control-workspace {
+    min-width: 0;
+    overflow-x: hidden;
   }
 
   .control-operational-alert {
