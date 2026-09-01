@@ -210,6 +210,13 @@ type DashboardStats = {
   players: number | null;
   activePlayers: number | null;
 };
+type ControlPublicationHistory = {
+  id: string;
+  area_key: string;
+  summary: string;
+  actor_name: string;
+  created_at: string;
+};
 type ScheduleEvent = {
   id?: string;
   starts_at: string;
@@ -1251,6 +1258,49 @@ function ControlListEmpty({
   );
 }
 
+function ControlPublicationState({
+  areaKey,
+  dirty,
+  history,
+}: {
+  areaKey: string;
+  dirty: boolean;
+  history: ControlPublicationHistory[];
+}) {
+  const entries = history.filter((item) => item.area_key === areaKey);
+  const latest = entries[0];
+  return (
+    <aside className={`control-publication-state${dirty ? " draft" : " published"}`}>
+      <div>
+        <small>ESTADO EDITORIAL</small>
+        <b>{dirty ? "RASCUNHO COM ALTERAÇÕES" : "CONTEÚDO PUBLICADO"}</b>
+        <span>
+          {dirty
+            ? "As mudanças permanecem somente nesta tela até você publicar."
+            : latest
+              ? `Última publicação em ${new Date(latest.created_at).toLocaleString("pt-BR")} por ${latest.actor_name}.`
+              : "Nenhuma publicação registrada no novo histórico."}
+        </span>
+      </div>
+      <details>
+        <summary>VER HISTÓRICO ({entries.length})</summary>
+        {entries.length === 0 ? (
+          <p>O histórico começará na próxima publicação desta área.</p>
+        ) : (
+          <ol>
+            {entries.slice(0, 6).map((item) => (
+              <li key={item.id}>
+                <b>{item.summary}</b>
+                <span>{new Date(item.created_at).toLocaleString("pt-BR")} · {item.actor_name}</span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </details>
+    </aside>
+  );
+}
+
 export default function ControlPage() {
   const [accessState, setAccessState] = useState<AccessState>(
     isSupabaseConfigured ? "loading" : "setup_required",
@@ -1508,6 +1558,9 @@ export default function ControlPage() {
     null,
   );
   const [dirtyForms, setDirtyForms] = useState<Set<string>>(() => new Set());
+  const [publicationHistory, setPublicationHistory] = useState<
+    ControlPublicationHistory[]
+  >([]);
   const [controlNotice, setControlNotice] = useState<ControlNotice | null>(
     null,
   );
@@ -2510,6 +2563,43 @@ export default function ControlPage() {
     return () => window.clearInterval(timer);
   }, [selectedArea, accessState]);
 
+  const loadPublicationHistory = async () => {
+    const { data } = await getSupabaseBrowserClient()
+      .from("control_publication_history")
+      .select("id,area_key,summary,actor_name,created_at")
+      .order("created_at", { ascending: false })
+      .limit(60);
+    if (data) setPublicationHistory(data as ControlPublicationHistory[]);
+  };
+
+  useEffect(() => {
+    if (accessState === "authorized") void loadPublicationHistory();
+  }, [accessState]);
+
+  const recordPublication = async (
+    areaKey: string,
+    summary: string,
+    snapshot: unknown,
+  ) => {
+    if (!admin) return;
+    const { data } = await getSupabaseBrowserClient()
+      .from("control_publication_history")
+      .insert({
+        area_key: areaKey,
+        summary,
+        snapshot,
+        actor_name: admin.display_name,
+        created_by: admin.user_id,
+      })
+      .select("id,area_key,summary,actor_name,created_at")
+      .single();
+    if (data)
+      setPublicationHistory((items) => [
+        data as ControlPublicationHistory,
+        ...items.filter((item) => item.id !== data.id),
+      ]);
+  };
+
   const updateHeroField = (field: keyof HeroContent, value: string) => {
     setHeroContent((current) => ({ ...current, [field]: value }));
     setHeroSaveState("idle");
@@ -2527,6 +2617,8 @@ export default function ControlPage() {
         updated_at: new Date().toISOString(),
       });
     setHeroSaveState(error ? "error" : "saved");
+    if (!error)
+      await recordPublication("hero", "Hero principal publicada", heroContent);
   };
 
   const updateProfileItem = (
@@ -2551,6 +2643,8 @@ export default function ControlPage() {
       .from("profile_items")
       .upsert(profileItems, { onConflict: "item_key" });
     setProfileSaveState(error ? "error" : "saved");
+    if (!error)
+      await recordPublication("profile", "Perfil publicado", profileItems);
   };
 
   const updateScheduleEvent = (
@@ -2713,6 +2807,11 @@ export default function ControlPage() {
       setDeletedScheduleIds([]);
       setScheduleSaveState("saved");
       notifyLiveContentChange();
+      await recordPublication(
+        "schedule",
+        "Agenda e vídeo publicados",
+        { scheduleEvents, featuredVideo },
+      );
     }
   };
 
@@ -2728,6 +2827,8 @@ export default function ControlPage() {
         updated_at: new Date().toISOString(),
       });
     setContentSaveState(error ? "error" : "saved");
+    if (!error)
+      await recordPublication("site-content", "Textos do site publicados", siteContent);
   };
 
   const handleLinksSave = async (event: FormEvent<HTMLFormElement>) => {
@@ -2754,6 +2855,7 @@ export default function ControlPage() {
       });
     setLinksSaveState(error ? "error" : "saved");
     if (!error) {
+      await recordPublication("official-links", "Links oficiais publicados", officialLinks);
       const changedAt = Date.now().toString();
       window.localStorage.setItem("thenees-official-links-updated", changedAt);
       if ("BroadcastChannel" in window) {
@@ -5071,6 +5173,11 @@ export default function ControlPage() {
               description="Altere a mensagem principal sem tocar no layout, nos efeitos ou na imagem ASCII."
               status="HOME / PRIMEIRA DOBRA"
             />
+            <ControlPublicationState
+              areaKey="hero"
+              dirty={dirtyForms.has("hero")}
+              history={publicationHistory}
+            />
             <form data-control-form="hero" onSubmit={handleHeroSave}>
               <fieldset>
                 <legend>IDENTIFICAÇÃO</legend>
@@ -5243,6 +5350,11 @@ export default function ControlPage() {
               </div>
               <span>{profileItems.length} ITENS ATIVOS</span>
             </div>
+            <ControlPublicationState
+              areaKey="site-content"
+              dirty={dirtyForms.has("content")}
+              history={publicationHistory}
+            />
             <form
               data-control-form="content"
               className="control-content-form"
@@ -5316,6 +5428,11 @@ export default function ControlPage() {
                 </button>
               </div>
             </form>
+            <ControlPublicationState
+              areaKey="profile"
+              dirty={dirtyForms.has("profile")}
+              history={publicationHistory}
+            />
             <form data-control-form="profile" onSubmit={handleProfileSave}>
               <div className="control-profile-divider">
                 <b>ITENS DO PERFIL</b>
@@ -5460,6 +5577,11 @@ export default function ControlPage() {
               </div>
               <span>{scheduleEvents.length} EVENTOS / 01 DESTAQUE</span>
             </div>
+            <ControlPublicationState
+              areaKey="schedule"
+              dirty={dirtyForms.has("schedule")}
+              history={publicationHistory}
+            />
             <form data-control-form="schedule" onSubmit={handleScheduleSave}>
               <section className="control-schedule-list">
                 <header>
@@ -5733,6 +5855,11 @@ export default function ControlPage() {
                 {String(officialLinks.channels.length).padStart(2, "0")} CANAIS
               </span>
             </div>
+            <ControlPublicationState
+              areaKey="official-links"
+              dirty={dirtyForms.has("links")}
+              history={publicationHistory}
+            />
             <form
               data-control-form="links"
               onSubmit={handleLinksSave}
