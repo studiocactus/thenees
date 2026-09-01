@@ -1224,6 +1224,33 @@ function ControlSectionHeader({
   );
 }
 
+function ControlListEmpty({
+  title,
+  description,
+  actionLabel,
+  onAction,
+}: {
+  title: string;
+  description: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
+  return (
+    <div className="control-list-empty" role="status">
+      <span aria-hidden="true">0</span>
+      <div>
+        <b>{title}</b>
+        <p>{description}</p>
+      </div>
+      {actionLabel && onAction && (
+        <button type="button" onClick={onAction}>
+          {actionLabel}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function ControlPage() {
   const [accessState, setAccessState] = useState<AccessState>(
     isSupabaseConfigured ? "loading" : "setup_required",
@@ -1266,7 +1293,7 @@ export default function ControlPage() {
     players: null,
     activePlayers: null,
   });
-  const [gameName, setGameName] = useState("ChatBattle");
+  const [, setGameName] = useState("ChatBattle");
   const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>([]);
   const [deletedScheduleIds, setDeletedScheduleIds] = useState<string[]>([]);
   const [savingScheduleIndex, setSavingScheduleIndex] = useState<number | null>(
@@ -7157,6 +7184,7 @@ export default function ControlPage() {
                 <label>
                   <span>⌕</span>
                   <input
+                    aria-label="Pesquisar comandos"
                     value={botCommandSearch}
                     onChange={(event) => {
                       setBotCommandSearch(event.target.value);
@@ -7216,7 +7244,20 @@ export default function ControlPage() {
                 <span />
               </div>
               <div className="control-bot-commands">
-                {visibleBotCommands.map(({ command, index }) => {
+                {visibleBotCommands.length === 0 ? (
+                  <ControlListEmpty
+                    title={botCommands.length === 0 ? "NENHUM COMANDO CADASTRADO" : "NENHUM COMANDO ENCONTRADO"}
+                    description={botCommands.length === 0 ? "Crie o primeiro comando para começar a responder ao chat." : "Ajuste a busca ou limpe o filtro para voltar a ver os comandos."}
+                    actionLabel={botCommands.length === 0 ? "CRIAR COMANDO" : "LIMPAR FILTROS"}
+                    onAction={() => {
+                      if (botCommands.length === 0) requestAreaChange("03-06");
+                      else {
+                        setBotCommandSearch("");
+                        setBotCommandFilter("all");
+                      }
+                    }}
+                  />
+                ) : visibleBotCommands.map(({ command, index }) => {
                   const isOpen = openBotCommandId === command.id;
                   return (
                     <article
@@ -7761,9 +7802,12 @@ export default function ControlPage() {
               </div>
               <div className="control-automation-list">
                 {visibleAutomations.length === 0 ? (
-                  <div className="control-community-empty">
-                    NENHUMA AUTOMAÇÃO NESTE FILTRO.
-                  </div>
+                  <ControlListEmpty
+                    title="NENHUMA AUTOMAÇÃO ENCONTRADA"
+                    description="O filtro atual não corresponde a nenhuma automação configurada."
+                    actionLabel="MOSTRAR TODAS"
+                    onAction={() => setAutomationFilter("all")}
+                  />
                 ) : (
                   visibleAutomations.map(({ automation, index }) => {
                     const isOpen =
@@ -8049,9 +8093,15 @@ export default function ControlPage() {
                     <button aria-pressed={outboxSourceFilter === "all"} className={outboxSourceFilter === "all" ? "active" : ""} type="button" onClick={() => setOutboxSourceFilter("all")}>TODAS AS ORIGENS</button>
                   </div>
                   {visibleOutbox.length === 0 ? (
-                    <div className="control-community-empty">
-                      NENHUM EVENTO NESTE FILTRO.
-                    </div>
+                    <ControlListEmpty
+                      title="NENHUMA ENTREGA ENCONTRADA"
+                      description="Não há registros que correspondam ao status e à origem selecionados."
+                      actionLabel="LIMPAR FILTROS"
+                      onAction={() => {
+                        setOutboxFilter("all");
+                        setOutboxSourceFilter("all");
+                      }}
+                    />
                   ) : (
                     visibleOutbox.map((item) => (
                       <article key={item.id}>
@@ -8625,6 +8675,7 @@ export default function ControlPage() {
                 <label>
                   <span><ControlIcon name="search" size={16} /></span>
                   <input
+                    aria-label="Pesquisar timers"
                     value={chatTimerSearch}
                     onChange={(event) => setChatTimerSearch(event.target.value)}
                     placeholder="PESQUISAR TIMER"
@@ -8680,14 +8731,22 @@ export default function ControlPage() {
               </div>
               <div className="control-timer-list">
                 {botChatTimers.length === 0 ? (
-                  <div className="control-community-empty">
-                    NENHUM TIMER CRIADO. ADICIONE O PRIMEIRO PARA PROGRAMAR
-                    MENSAGENS AUTOMÁTICAS.
-                  </div>
+                  <ControlListEmpty
+                    title="NENHUM TIMER CRIADO"
+                    description="Adicione o primeiro timer para programar mensagens automáticas no chat."
+                    actionLabel="CRIAR PRIMEIRO TIMER"
+                    onAction={addChatTimer}
+                  />
                 ) : visibleChatTimers.length === 0 ? (
-                  <div className="control-community-empty">
-                    NENHUM TIMER ENCONTRADO NESTE FILTRO.
-                  </div>
+                  <ControlListEmpty
+                    title="NENHUM TIMER ENCONTRADO"
+                    description="A busca ou o status selecionado não corresponde a nenhum timer."
+                    actionLabel="LIMPAR FILTROS"
+                    onAction={() => {
+                      setChatTimerSearch("");
+                      setChatTimerFilter("all");
+                    }}
+                  />
                 ) : (
                   visibleChatTimers.map(({ timer, index }) => {
                     const isOpen = openChatTimerId === timer.id;

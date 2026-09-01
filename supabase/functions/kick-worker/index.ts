@@ -14,7 +14,7 @@ Deno.serve(async (request) => {
   if (!admin) return json({error:"unauthorized"},401);
   const supabase=serviceClient();
   await supabase.rpc("recover_stale_bot_outbox");
-  const token=await getKickToken();
+  await getKickToken();
   const {data:integration,error:integrationError}=await supabase.from("platform_integrations").select("external_user_id").eq("platform","KICK").single();
   if(integrationError||!integration?.external_user_id)return json({error:"kick_channel_not_configured"},503);
   const broadcasterUserId=Number(integration.external_user_id);
