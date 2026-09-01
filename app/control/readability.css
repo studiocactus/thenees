@@ -1,4 +1,11 @@
 /* Control typography system — legibility takes priority over pixel density. */
+.control-auth p,
+.control-dashboard-v2 p {
+  font-family: var(--font-mono) !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+}
+
 .control-dashboard-v2{
   --control-type-meta:10px;
   --control-type-ui:11px;
