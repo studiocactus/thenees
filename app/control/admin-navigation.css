@@ -232,7 +232,7 @@
 }
 
 .control-nav-children {
-  padding: 12px 14px 18px 40px;
+  padding: 10px 16px 14px 42px;
   display: none;
   background:
     linear-gradient(90deg, rgba(117,103,255,.09), transparent 42%),
@@ -246,8 +246,8 @@
 }
 
 .control-dashboard-v2 > .control-sidebar .control-nav-children button {
-  min-height: 42px;
-  padding: 8px 10px;
+  min-height: 39px;
+  padding: 7px 4px;
   border: 0;
   background: transparent;
   display: grid;
@@ -258,14 +258,19 @@
   cursor: pointer;
   color: #8d9097;
   font: 8px/1.4 var(--font-pixel);
-  transition: color .18s ease,transform .18s ease,background-color .18s ease,box-shadow .18s ease;
+  transition: color .18s ease,transform .18s ease;
 }
 
-.control-dashboard-v2 > .control-sidebar .control-nav-children button:hover,
+.control-dashboard-v2 > .control-sidebar .control-nav-children button:hover {
+  color: #c5ff00;
+  background: transparent;
+  transform: translateX(3px);
+}
+
 .control-dashboard-v2 > .control-sidebar .control-nav-children button.selected {
   color: #c5ff00;
-  background: rgba(197,255,0,.055);
-  transform: translateX(2px);
+  background: transparent;
+  transform: none;
 }
 
 .control-dashboard-v2 > .control-sidebar .control-nav-children button.selected::after {
@@ -279,7 +284,7 @@
 }
 
 .control-dashboard-v2 > .control-sidebar .control-nav-children button.selected {
-  box-shadow: inset 2px 0 0 #c5ff00;
+  box-shadow: none;
 }
 
 .control-nav-item-icon {
@@ -291,7 +296,12 @@
 .control-nav-item:hover .control-nav-item-icon,
 .control-nav-item.selected .control-nav-item-icon {
   color: #c5ff00;
-  transform: scale(1.08);
+  transform: scale(1.06);
+}
+
+.control-nav-item.selected .control-nav-item-number,
+.control-nav-item.selected b {
+  color: #c5ff00;
 }
 
 .control-nav-item b {
@@ -620,7 +630,7 @@
   .control-sidebar nav section.active .control-nav-children {
     position: static;
     height: auto;
-    padding: 12px 14px 18px 36px;
+    padding: 10px 16px 14px 38px;
     display: grid !important;
     gap: 0;
     overflow: visible;
@@ -630,8 +640,8 @@
   }
 
   .control-dashboard-v2 > .control-sidebar .control-nav-children button {
-    min-height: 44px;
-    padding: 9px 10px;
+    min-height: 42px;
+    padding: 8px 4px;
     white-space: normal;
   }
 
