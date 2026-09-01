@@ -363,7 +363,7 @@
 }
 
 .control-nav-section-label {
-  min-height: 30px;
+  min-height: 34px;
   width: auto;
   margin: 14px -16px 6px -42px;
   padding: 0 16px 0 42px;
@@ -374,12 +374,16 @@
   border-left: 2px solid #7567ff;
   background: linear-gradient(90deg, rgba(117,103,255,.16), transparent 78%);
   color: #c7c3ff;
-  font: 8px/1.4 var(--font-pixel);
+  font: 700 11px/1 var(--font-pixel);
   letter-spacing: .14em;
   text-transform: uppercase;
 }
 
-.control-nav-section-label svg { color:#8f80ff; }
+.control-nav-section-label svg {
+  width:15px;
+  height:15px;
+  color:#8f80ff;
+}
 .control-nav-section-label span {
   display:block !important;
   width:auto;

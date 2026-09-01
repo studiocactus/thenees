@@ -18,13 +18,25 @@
 
 /* Navigation and persistent chrome */
 .control-dashboard-v2 .control-nav-category,
-.control-dashboard-v2 .control-nav-children button,
 .control-dashboard-v2 .control-sidebar-footer,
 .control-dashboard-v2 .control-user-area,
 .control-dashboard-v2 .control-operational-alert,
 .control-dashboard-v2 .control-notice{font-size:var(--control-type-ui)!important;line-height:var(--control-line-ui)!important}
 .control-dashboard-v2 .control-nav-category b,
 .control-dashboard-v2 .control-nav-children button{letter-spacing:.02em}
+.control-dashboard-v2 .control-sidebar .control-nav-children .control-nav-section-label{
+  font-size:12px!important;
+  font-weight:700!important;
+  line-height:1!important;
+}
+.control-dashboard-v2 .control-sidebar .control-nav-children .control-nav-item{
+  font-size:10px!important;
+  line-height:1.45!important;
+}
+.control-dashboard-v2 .control-sidebar .control-nav-section-label svg{
+  width:15px!important;
+  height:15px!important;
+}
 .control-dashboard-v2 .control-nav-children button small,
 .control-dashboard-v2 .control-sidebar small,
 .control-dashboard-v2 .control-user-area small{font-size:var(--control-type-meta)!important;line-height:1.45!important}
