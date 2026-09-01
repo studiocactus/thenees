@@ -5,8 +5,11 @@ Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers:corsHeaders });
   const secret=request.headers.get("x-worker-secret");
   const cronSecret=request.headers.get("x-cron-secret");
-  const serviceAuthorization=request.headers.get("Authorization")===`Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`;
-  const internalRequest=secret===Deno.env.get("BOT_WORKER_SECRET")||cronSecret===Deno.env.get("CHAT_TIMER_CRON_SECRET")||serviceAuthorization;
+  const workerSecret=Deno.env.get("BOT_WORKER_SECRET");
+  const configuredCronSecret=Deno.env.get("CHAT_TIMER_CRON_SECRET");
+  const serviceKey=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const serviceAuthorization=Boolean(serviceKey)&&request.headers.get("Authorization")===`Bearer ${serviceKey}`;
+  const internalRequest=(Boolean(workerSecret)&&secret===workerSecret)||(Boolean(configuredCronSecret)&&cronSecret===configuredCronSecret)||serviceAuthorization;
   const actor=internalRequest?{role:"worker"}:await requireAdmin(request);
   if(!actor)return json({error:"unauthorized"},401);
   const supabase=serviceClient();
@@ -18,7 +21,6 @@ Deno.serve(async (request) => {
     .lte("available_at",new Date().toISOString());
   if(pendingError)return json({error:pendingError.message},500);
   const projectUrl=Deno.env.get("SUPABASE_URL");
-  const workerSecret=Deno.env.get("BOT_WORKER_SECRET");
   if(projectUrl&&workerSecret&&Number(pendingCount??0)>0){
     await Promise.all([
       fetch(`${projectUrl}/functions/v1/twitch-worker`,{method:"POST",headers:{"x-worker-secret":workerSecret,"Content-Type":"application/json"},body:"{}"}),

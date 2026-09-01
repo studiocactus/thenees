@@ -6,7 +6,8 @@ import { MAX_DELIVERY_ATTEMPTS, isTransientDeliveryError, parseRetryAfterSeconds
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const secret = request.headers.get("x-worker-secret");
-  const adminUser = secret === Deno.env.get("BOT_WORKER_SECRET") ? {role:"worker"} : await requireAdmin(request);
+  const workerSecret = Deno.env.get("BOT_WORKER_SECRET");
+  const adminUser = workerSecret && secret === workerSecret ? {role:"worker"} : await requireAdmin(request);
   if (!adminUser) return json({error:"unauthorized"},401);
   const supabase=serviceClient();
   await supabase.rpc("recover_stale_bot_outbox");

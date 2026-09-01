@@ -1,9 +1,12 @@
 import { corsHeaders, json } from "../_shared/cors.ts";
-import { serviceClient } from "../_shared/supabase.ts";
+import { requireAdmin, serviceClient } from "../_shared/supabase.ts";
 import { twitchScopes } from "../_shared/twitch.ts";
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+  const admin = await requireAdmin(request);
+  if (!admin || !["owner", "admin"].includes(admin.role)) return json({ error: "unauthorized" }, 401);
   const clientId = Deno.env.get("TWITCH_CLIENT_ID");
   const redirectUri = Deno.env.get("TWITCH_REDIRECT_URI");
   if (!clientId || !redirectUri) return json({ error: "twitch_secrets_missing" }, 503);
