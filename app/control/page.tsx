@@ -1399,6 +1399,8 @@ export default function ControlPage() {
     run_when: "always" as NonNullable<BotCommand["run_when"]>,
     cooldown_seconds: 15,
     global_cooldown_seconds: 3,
+    delivery_mode: "message" as DeliveryMode,
+    announcement_color: "primary" as AnnouncementColor,
     responses: [""],
   });
   const [botCommandCreateState, setBotCommandCreateState] = useState<
@@ -3220,6 +3222,8 @@ export default function ControlPage() {
         run_when: botCommandDraft.run_when,
         cooldown_seconds: botCommandDraft.cooldown_seconds,
         global_cooldown_seconds: botCommandDraft.global_cooldown_seconds,
+        delivery_mode: botCommandDraft.delivery_mode,
+        announcement_color: botCommandDraft.announcement_color,
         approval_status: "review",
         created_by: admin?.display_name,
         enabled: false,
@@ -7035,10 +7039,10 @@ export default function ControlPage() {
             <div className="control-editor-heading">
               <div>
                 <small>03.01 / ARROBASRV</small>
-                <h2>CANAIS & COMANDOS</h2>
+                <h2>COMANDOS CADASTRADOS</h2>
                 <p>
-                  Configure o comportamento compartilhado do bot. Tokens e
-                  segredos permanecem fora do navegador.
+                  Edite conteúdo, comportamento, regras e formato de envio no
+                  mesmo lugar. Cada comando continua independente dos timers.
                 </p>
               </div>
               <span>
@@ -7140,24 +7144,7 @@ export default function ControlPage() {
                 <button
                   className="primary"
                   type="button"
-                  onClick={() => {
-                    const id = crypto.randomUUID();
-                    setBotCommands((items) => [
-                      ...items,
-                      {
-                        id,
-                        command: `!comando_${Date.now().toString().slice(-6)}`,
-                        description: "Novo comando personalizado.",
-                        response_template:
-                          "@{{user}}, configure esta resposta.",
-                        permission: "everyone",
-                        cooldown_seconds: 10,
-                        enabled: false,
-                        sort_order: items.length + 1,
-                      },
-                    ]);
-                    setOpenBotCommandId(id);
-                  }}
+                  onClick={() => requestAreaChange("03-06")}
                 >
                   <ControlIcon name="add" size={15} /> NOVO COMANDO
                 </button>
@@ -7232,8 +7219,8 @@ export default function ControlPage() {
                       {isOpen && (
                         <fieldset id={`command-${command.id}`}>
                           <nav className="control-command-editor-tabs" aria-label={`Configurações de ${command.command}`}>
-                            <button type="button" className={(botCommandEditorTabs[command.id] ?? "basic") === "basic" ? "active" : ""} onClick={() => setBotCommandEditorTabs((tabs) => ({ ...tabs, [command.id]: "basic" }))}>AJUSTES</button>
-                            <button type="button" className={botCommandEditorTabs[command.id] === "advanced" ? "active" : ""} onClick={() => setBotCommandEditorTabs((tabs) => ({ ...tabs, [command.id]: "advanced" }))}>CONFIGURAÇÕES AVANÇADAS</button>
+                            <button type="button" className={(botCommandEditorTabs[command.id] ?? "basic") === "basic" ? "active" : ""} onClick={() => setBotCommandEditorTabs((tabs) => ({ ...tabs, [command.id]: "basic" }))}>CONTEÚDO & COMPORTAMENTO</button>
+                            <button type="button" className={botCommandEditorTabs[command.id] === "advanced" ? "active" : ""} onClick={() => setBotCommandEditorTabs((tabs) => ({ ...tabs, [command.id]: "advanced" }))}>REGRAS & ENVIO</button>
                           </nav>
                           {(botCommandEditorTabs[command.id] ?? "basic") === "basic" && <>
                           <label>
@@ -7274,6 +7261,48 @@ export default function ControlPage() {
                               }
                             />
                           </label>
+                          <label>
+                            COMPORTAMENTO
+                            <select
+                              value={command.command_type ?? "text"}
+                              onChange={(event) =>
+                                setBotCommands((items) =>
+                                  items.map((item, i) =>
+                                    i === index
+                                      ? { ...item, command_type: event.target.value as NonNullable<BotCommand["command_type"]> }
+                                      : item,
+                                  ),
+                                )
+                              }
+                            >
+                              <option value="text">RESPOSTA SIMPLES</option>
+                              <option value="random">RESPOSTAS ALEATÓRIAS</option>
+                              <option value="dice">DADO</option>
+                              <option value="choice">ESCOLHA</option>
+                              <option value="eight_ball">ORÁCULO</option>
+                              <option value="counter">CONTADOR DA COMUNIDADE</option>
+                              <option value="user_counter">CONTADOR POR USUÁRIO</option>
+                            </select>
+                          </label>
+                          <label>
+                            CATEGORIA
+                            <select
+                              value={command.category ?? "community"}
+                              onChange={(event) =>
+                                setBotCommands((items) =>
+                                  items.map((item, i) =>
+                                    i === index ? { ...item, category: event.target.value } : item,
+                                  ),
+                                )
+                              }
+                            >
+                              <option value="community">COMUNIDADE</option>
+                              <option value="fun">HUMOR</option>
+                              <option value="games">BRINCADEIRAS</option>
+                              <option value="utility">UTILIDADE</option>
+                              <option value="moderation">MODERAÇÃO</option>
+                            </select>
+                          </label>
                           <label className="wide">
                             RESPOSTA / TEMPLATE · UMA VARIAÇÃO POR LINHA
                             <textarea
@@ -7292,6 +7321,29 @@ export default function ControlPage() {
                               }
                             />
                           </label>
+                          <div className="wide">
+                            <MessageIdeaGenerator
+                              kind="command"
+                              onApply={(messages) =>
+                                setBotCommands((items) =>
+                                  items.map((item, i) =>
+                                    i === index
+                                      ? { ...item, response_template: appendMessageVariants(item.response_template, messages) }
+                                      : item,
+                                  ),
+                                )
+                              }
+                            />
+                          </div>
+                          <aside className="control-command-variable-guide wide">
+                            <b>VARIÁVEIS</b>
+                            <span>{"{{display_name}}"}</span>
+                            <span>{"{{target}}"}</span>
+                            <span>{"{{arguments}}"}</span>
+                            <span>{"{{random_number}}"}</span>
+                            <span>{"{{counter_value}}"}</span>
+                            <span>{"{{user_count}}"}</span>
+                          </aside>
                           </>}
                           {botCommandEditorTabs[command.id] === "advanced" && <>
                           <label className="wide">
@@ -7435,6 +7487,47 @@ export default function ControlPage() {
                               }
                             />
                           </label>
+                          <label>
+                            FORMATO NA TWITCH
+                            <select
+                              value={command.delivery_mode ?? "message"}
+                              onChange={(event) =>
+                                setBotCommands((items) =>
+                                  items.map((item, i) =>
+                                    i === index
+                                      ? { ...item, delivery_mode: event.target.value as DeliveryMode }
+                                      : item,
+                                  ),
+                                )
+                              }
+                            >
+                              <option value="message">MENSAGEM COMUM</option>
+                              <option value="announcement">ANÚNCIO TWITCH</option>
+                            </select>
+                          </label>
+                          {(command.delivery_mode ?? "message") === "announcement" && (
+                            <label>
+                              COR DO ANÚNCIO
+                              <select
+                                value={command.announcement_color ?? "primary"}
+                                onChange={(event) =>
+                                  setBotCommands((items) =>
+                                    items.map((item, i) =>
+                                      i === index
+                                        ? { ...item, announcement_color: event.target.value as AnnouncementColor }
+                                        : item,
+                                    ),
+                                  )
+                                }
+                              >
+                                <option value="primary">PADRÃO</option>
+                                <option value="blue">AZUL</option>
+                                <option value="green">VERDE</option>
+                                <option value="orange">LARANJA</option>
+                                <option value="purple">ROXO</option>
+                              </select>
+                            </label>
+                          )}
                           <label className="control-check wide">
                             <input
                               type="checkbox"
@@ -8455,92 +8548,6 @@ export default function ControlPage() {
             </form>
           </section>
         )}
-        {selectedArea === "03-01" && (
-          <section className="control-command-delivery control-command-delivery-page">
-            <header>
-              <div>
-                <b>FORMATO DE ENVIO DOS COMANDOS</b>
-                <small>
-                  CONFIGURAÇÃO EXCLUSIVA DAS RESPOSTAS ACIONADAS POR !COMANDO
-                </small>
-              </div>
-              <span>
-                {
-                  botCommands.filter(
-                    (item) =>
-                      (item.delivery_mode ?? "message") === "announcement",
-                  ).length
-                }{" "}
-                ANÚNCIOS
-              </span>
-            </header>
-            <aside>
-              <b>COMANDOS ≠ TIMERS</b>
-              <p>
-                As opções abaixo afetam somente respostas solicitadas por
-                viewers ou moderadores usando ! no chat.
-              </p>
-            </aside>
-            <div>
-              {botCommands.map((command, index) => (
-                <article key={command.id}>
-                  <div>
-                    <b>{command.command}</b>
-                    <small>{command.description}</small>
-                  </div>
-                  <select
-                    aria-label={`Formato de ${command.command}`}
-                    value={command.delivery_mode ?? "message"}
-                    onChange={(event) =>
-                      setBotCommands((items) =>
-                        items.map((item, i) =>
-                          i === index
-                            ? {
-                                ...item,
-                                delivery_mode: event.target
-                                  .value as DeliveryMode,
-                              }
-                            : item,
-                        ),
-                      )
-                    }
-                  >
-                    <option value="message">MENSAGEM COMUM</option>
-                    <option value="announcement">ANÚNCIO TWITCH</option>
-                  </select>
-                  {(command.delivery_mode ?? "message") === "announcement" ? (
-                    <select
-                      aria-label={`Cor de ${command.command}`}
-                      value={command.announcement_color ?? "primary"}
-                      onChange={(event) =>
-                        setBotCommands((items) =>
-                          items.map((item, i) =>
-                            i === index
-                              ? {
-                                  ...item,
-                                  announcement_color: event.target
-                                    .value as AnnouncementColor,
-                                }
-                              : item,
-                          ),
-                        )
-                      }
-                    >
-                      <option value="primary">PADRÃO</option>
-                      <option value="blue">AZUL</option>
-                      <option value="green">VERDE</option>
-                      <option value="orange">LARANJA</option>
-                      <option value="purple">ROXO</option>
-                    </select>
-                  ) : (
-                    <span>SEM DESTAQUE</span>
-                  )}
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
-
         {selectedArea === "03-09" && (
           <section className="control-chat-timers">
             <ControlSectionHeader
@@ -9699,6 +9706,41 @@ export default function ControlPage() {
                     }
                   />
                 </label>
+                <label>
+                  FORMATO NA TWITCH
+                  <select
+                    value={botCommandDraft.delivery_mode}
+                    onChange={(event) =>
+                      setBotCommandDraft((item) => ({
+                        ...item,
+                        delivery_mode: event.target.value as DeliveryMode,
+                      }))
+                    }
+                  >
+                    <option value="message">MENSAGEM COMUM</option>
+                    <option value="announcement">ANÚNCIO TWITCH</option>
+                  </select>
+                </label>
+                {botCommandDraft.delivery_mode === "announcement" && (
+                  <label>
+                    COR DO ANÚNCIO
+                    <select
+                      value={botCommandDraft.announcement_color}
+                      onChange={(event) =>
+                        setBotCommandDraft((item) => ({
+                          ...item,
+                          announcement_color: event.target.value as AnnouncementColor,
+                        }))
+                      }
+                    >
+                      <option value="primary">PADRÃO</option>
+                      <option value="blue">AZUL</option>
+                      <option value="green">VERDE</option>
+                      <option value="orange">LARANJA</option>
+                      <option value="purple">ROXO</option>
+                    </select>
+                  </label>
+                )}
                 <label className="wide">
                   VISIBILIDADE NO !COMANDOS
                   <select
