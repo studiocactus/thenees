@@ -141,27 +141,44 @@
 
 .control-sidebar nav section {
   border-bottom: 1px solid #292b30;
+  position: relative;
 }
 
 .control-sidebar .control-nav-category {
-  min-height: 58px;
-  padding: 0 20px;
+  min-height: 62px;
+  padding: 0 18px;
   display: grid;
-  grid-template-columns: 30px 1fr 16px;
+  grid-template-columns: 24px 22px minmax(0, 1fr) 20px;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   color: #b8bbc0;
   font: 10px var(--font-pixel);
-  transition: background-color .22s ease,color .22s ease;
+  transition: background-color .22s ease,color .22s ease, padding-left .22s ease;
 }
 
-.control-nav-category span {
+.control-nav-category-number {
+  display: block !important;
+  grid-column: 1;
   color: #666a71;
   font-size: 8px;
   transition: color .22s ease;
 }
 
+.control-nav-category-icon {
+  grid-column: 2;
+  color: #777b83;
+  transition: color .22s ease, transform .22s ease;
+}
+
+.control-nav-category b {
+  grid-column: 3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .control-nav-category i {
+  grid-column: 4;
   color: #666a71;
   font-style: normal;
   text-align: right;
@@ -185,7 +202,8 @@
 }
 
 .control-sidebar nav section.active .control-nav-category span,
-.control-sidebar nav section.active .control-nav-category i {
+.control-sidebar nav section.active .control-nav-category i,
+.control-sidebar nav section.active .control-nav-category-icon {
   color: #08090b;
 }
 
@@ -193,10 +211,33 @@
   transform: scale(1.15);
 }
 
+.control-sidebar .control-nav-category:not(:disabled):hover {
+  padding-left: 22px;
+  background: #17191e;
+  color: #f4f4ef;
+}
+
+.control-sidebar .control-nav-category:not(:disabled):hover .control-nav-category-icon {
+  color: #c5ff00;
+  transform: scale(1.08);
+}
+
+.control-sidebar nav section.active .control-nav-category:hover {
+  background: #c5ff00;
+  color: #08090b;
+}
+
+.control-sidebar nav section.active .control-nav-category:hover .control-nav-category-icon {
+  color: #08090b;
+}
+
 .control-nav-children {
-  padding: 8px 18px 14px 50px;
+  padding: 12px 14px 18px 40px;
   display: none;
-  background: #111216;
+  background:
+    linear-gradient(90deg, rgba(117,103,255,.09), transparent 42%),
+    #111216;
+  border-top: 1px solid rgba(117,103,255,.24);
 }
 
 .control-sidebar nav section.active .control-nav-children {
@@ -205,27 +246,61 @@
 }
 
 .control-dashboard-v2 > .control-sidebar .control-nav-children button {
-  padding: 10px 0;
+  min-height: 42px;
+  padding: 8px 10px;
   border: 0;
   background: transparent;
+  display: grid;
+  grid-template-columns: 24px 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
   text-align: left;
   cursor: pointer;
   color: #8d9097;
   font: 8px/1.4 var(--font-pixel);
-  transition: color .18s ease,transform .18s ease;
+  transition: color .18s ease,transform .18s ease,background-color .18s ease,box-shadow .18s ease;
 }
 
 .control-dashboard-v2 > .control-sidebar .control-nav-children button:hover,
 .control-dashboard-v2 > .control-sidebar .control-nav-children button.selected {
   color: #c5ff00;
-  background: transparent;
-  transform: translateX(3px);
+  background: rgba(197,255,0,.055);
+  transform: translateX(2px);
 }
 
 .control-dashboard-v2 > .control-sidebar .control-nav-children button.selected::after {
-  content: "◀";
-  float: right;
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  transform: rotate(45deg);
   color: #c5ff00;
+}
+
+.control-dashboard-v2 > .control-sidebar .control-nav-children button.selected {
+  box-shadow: inset 2px 0 0 #c5ff00;
+}
+
+.control-nav-item-icon {
+  grid-column: 2;
+  color: #666b74;
+  transition: color .18s ease, transform .18s ease;
+}
+
+.control-nav-item:hover .control-nav-item-icon,
+.control-nav-item.selected .control-nav-item-icon {
+  color: #c5ff00;
+  transform: scale(1.08);
+}
+
+.control-nav-item b {
+  grid-column: 3;
+  min-width: 0;
+  font: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .control-dashboard-v2 > .control-sidebar .control-nav-children button.unavailable {
@@ -248,17 +323,33 @@
   cursor: pointer;
 }
 
-.control-nav-children span {
-  display: inline-block;
-  width: 28px;
+.control-nav-item-number {
+  display: inline-block !important;
+  grid-column: 1;
   color: #565961;
+  font-size: 7px;
 }
 
 .control-nav-section-label {
-  margin: 12px 0 5px;
-  color: #777c84;
+  min-height: 30px;
+  margin: 14px 0 6px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border-left: 2px solid #7567ff;
+  background: linear-gradient(90deg, rgba(117,103,255,.16), transparent 78%);
+  color: #c7c3ff;
   font: 8px/1.4 var(--font-pixel);
-  letter-spacing: .12em;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.control-nav-section-label svg { color:#8f80ff; }
+.control-nav-section-label span {
+  display:block !important;
+  width:auto;
+  color:inherit;
 }
 
 .control-nav-section-label:first-child {
@@ -516,7 +607,7 @@
   .control-sidebar .control-nav-category {
     width: 100%;
     min-height: 58px;
-    grid-template-columns: 30px 1fr 16px;
+    grid-template-columns: 24px 22px minmax(0, 1fr) 20px;
     padding: 0 20px;
     font-size: 10px;
     white-space: normal;
@@ -529,7 +620,7 @@
   .control-sidebar nav section.active .control-nav-children {
     position: static;
     height: auto;
-    padding: 8px 18px 14px 50px;
+    padding: 12px 14px 18px 36px;
     display: grid !important;
     gap: 0;
     overflow: visible;
@@ -540,9 +631,11 @@
 
   .control-dashboard-v2 > .control-sidebar .control-nav-children button {
     min-height: 44px;
-    padding: 10px 0;
+    padding: 9px 10px;
     white-space: normal;
   }
+
+  .control-nav-item b { white-space: normal; }
 
   .control-sidebar-footer {
     display: grid !important;

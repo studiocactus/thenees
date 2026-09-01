@@ -8,6 +8,7 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
+import { gsap } from "gsap";
 import {
   getSupabaseBrowserClient,
   isSupabaseConfigured,
@@ -1017,6 +1018,34 @@ const arrobaSrvMenuSections: Record<string, string> = {
   "03-05": "FERRAMENTAS",
   "03-08": "OPERAÇÃO",
 };
+const controlMenuGroupIcons: Record<string, ControlIconName> = {
+  "00": "home",
+  "01": "globe",
+  "02": "dashboard",
+  "03": "bot",
+  "04": "users",
+  "05": "megaphone",
+  "06": "settings",
+  "07": "database",
+};
+const controlMenuSectionIcons: Record<string, ControlIconName> = {
+  CENTRAL: "dashboard",
+  MENSAGENS: "message",
+  FERRAMENTAS: "tools",
+  "OPERAÇÃO": "settings",
+};
+const controlMenuItemIcons: Record<string, ControlIconName> = {
+  "03-00": "dashboard",
+  "03-01": "command",
+  "03-09": "timer",
+  "03-03": "notification",
+  "03-02": "quote",
+  "03-06": "add",
+  "03-04": "link",
+  "03-07": "chart",
+  "03-05": "help",
+  "03-08": "settings",
+};
 const defaultOfficialLinks: OfficialLinks = {
   twitch: "https://www.twitch.tv/thenees",
   kick: "https://kick.com/thenees",
@@ -1335,6 +1364,56 @@ export default function ControlPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedArea, setSelectedArea] = useState<any>("00-01");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const controlSidebarRef = useRef<HTMLElement | null>(null);
+  const controlNavChildrenRefs = useRef<Record<string, HTMLDivElement | null>>(
+    {},
+  );
+  useEffect(() => {
+    const groupNumber = String(selectedArea).split("-")[0];
+    const children = controlNavChildrenRefs.current[groupNumber];
+    if (!children || window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+      return;
+    const targets = children.querySelectorAll(
+      ".control-nav-section-label, .control-nav-item",
+    );
+    gsap.fromTo(
+      targets,
+      { autoAlpha: 0, x: -9 },
+      {
+        autoAlpha: 1,
+        x: 0,
+        duration: 0.28,
+        stagger: 0.025,
+        ease: "power2.out",
+        clearProps: "opacity,visibility,transform",
+      },
+    );
+  }, [selectedArea]);
+
+  useEffect(() => {
+    if (
+      !mobileMenuOpen ||
+      !controlSidebarRef.current ||
+      window.matchMedia("(min-width: 821px)").matches ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+    const targets = controlSidebarRef.current.querySelectorAll(
+      ".control-sidebar-intro > *, .control-nav-category, .control-nav-children > *, .control-sidebar-footer > *",
+    );
+    gsap.fromTo(
+      targets,
+      { autoAlpha: 0, x: -12 },
+      {
+        autoAlpha: 1,
+        x: 0,
+        duration: 0.3,
+        stagger: 0.018,
+        ease: "power2.out",
+        clearProps: "opacity,visibility,transform",
+      },
+    );
+  }, [mobileMenuOpen]);
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
     schedule: null,
     quotes: null,
@@ -4725,6 +4804,7 @@ export default function ControlPage() {
         className={`control-sidebar${mobileMenuOpen ? " mobile-open" : ""}`}
         id="control-main-navigation"
         aria-label="Menu principal do Control"
+        ref={controlSidebarRef}
       >
         <div className="control-sidebar-intro">
           <small>PAINEL DE CONTROLE</small>
@@ -4754,7 +4834,14 @@ export default function ControlPage() {
                     requestAreaChange(`${group.number}-${firstAvailable[0]}`);
                 }}
               >
-                <span>{group.number}</span>
+                <span className="control-nav-category-number">
+                  {group.number}
+                </span>
+                <ControlIcon
+                  className="control-nav-category-icon"
+                  name={controlMenuGroupIcons[group.number] ?? "dashboard"}
+                  size={17}
+                />
                 <b>{group.title}</b>
                 <i>
                   {group.items.every(([number]) =>
@@ -4766,7 +4853,12 @@ export default function ControlPage() {
                       : "+"}
                 </i>
               </button>
-              <div className="control-nav-children">
+              <div
+                className="control-nav-children"
+                ref={(node) => {
+                  controlNavChildrenRefs.current[group.number] = node;
+                }}
+              >
                 {group.items.map(([number, title], itemIndex) => {
                   const area = `${group.number}-${number}`;
                   const unavailable = unavailableControlAreas.has(area);
@@ -4782,22 +4874,31 @@ export default function ControlPage() {
                     <Fragment key={area}>
                       {showMenuSection && (
                         <small className="control-nav-section-label">
-                          {menuSection}
+                          <ControlIcon
+                            name={controlMenuSectionIcons[menuSection] ?? "dashboard"}
+                            size={13}
+                          />
+                          <span>{menuSection}</span>
                         </small>
                       )}
                       <button
-                        className={`${selectedArea === area ? "selected " : ""}${unavailable ? "unavailable" : ""}`}
+                        className={`control-nav-item ${selectedArea === area ? "selected " : ""}${unavailable ? "unavailable" : ""}`}
                         type="button"
                         aria-current={selectedArea === area ? "page" : undefined}
                         disabled={unavailable}
                         onClick={() => requestAreaChange(area)}
                       >
-                        <span>
+                        <span className="control-nav-item-number">
                           {group.number === "03"
                             ? String(itemIndex + 1).padStart(2, "0")
                             : number}
                         </span>
-                        {title}
+                        <ControlIcon
+                          className="control-nav-item-icon"
+                          name={controlMenuItemIcons[area] ?? controlMenuGroupIcons[group.number] ?? "dashboard"}
+                          size={14}
+                        />
+                        <b>{title}</b>
                         {unavailable && <small>EM BREVE</small>}
                       </button>
                     </Fragment>
