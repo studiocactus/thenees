@@ -94,11 +94,23 @@ Deno.serve(async (request) => {
     let retryAfterSeconds=0;
     try{
       const isAnnouncement=deliveryMode==="announcement";
+      if(isAnnouncement){
+        const {data:announcementWait,error:rateLimitError}=await supabase.rpc("reserve_bot_rate_limit",{p_rate_key:`twitch-announcement:${broadcasterId}`,p_interval_seconds:3});
+        if(rateLimitError)throw new Error(`announcement_rate_limit:${rateLimitError.message}`);
+        const waitSeconds=Number(announcementWait??0);
+        if(waitSeconds>0){
+          const availableAt=new Date(Date.now()+waitSeconds*1000).toISOString();
+          await supabase.from("bot_outbox").update({status:"pending",attempts:Math.max(0,Number(item.attempts)-1),processed_at:null,last_error:null,available_at:availableAt}).eq("id",item.id);
+          results.push({id:item.id,status:"deferred",available_at:availableAt});
+          continue;
+        }
+      }
       const endpoint=isAnnouncement?`https://api.twitch.tv/helix/chat/announcements?broadcaster_id=${encodeURIComponent(broadcasterId)}&moderator_id=${encodeURIComponent(botUserId)}`:"https://api.twitch.tv/helix/chat/messages";
       const body=isAnnouncement?{message,color:announcementColor}:{broadcaster_id:broadcasterId,sender_id:botUserId,message};
       const response=await fetch(endpoint,{method:"POST",headers:{Authorization:`Bearer ${token.access_token}`,"Client-Id":clientId,"Content-Type":"application/json"},body:JSON.stringify(body)});
       if(!response.ok){
         retryAfterSeconds=parseRetryAfterSeconds(response);
+        if(isAnnouncement&&response.status===429)retryAfterSeconds=Math.max(3,retryAfterSeconds);
         throw new Error(`twitch_${response.status}:${await response.text()}`);
       }
       const outcome=isAnnouncement?null:(await response.json()).data?.[0];
