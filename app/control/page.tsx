@@ -4405,6 +4405,8 @@ export default function ControlPage() {
                   </label>
                   <button
                     type="button"
+                    aria-expanded={isOpen}
+                    aria-controls={`special-viewer-${message.id}`}
                     onClick={() =>
                       setOpenSpecialViewerId(isOpen ? null : message.id)
                     }
@@ -4418,7 +4420,7 @@ export default function ControlPage() {
                   </button>
                 </div>
                 {isOpen && (
-                  <fieldset>
+                  <fieldset id={`special-viewer-${message.id}`}>
                     <label className="wide">
                       MENSAGEM · UMA VARIAÇÃO POR LINHA
                       <textarea
@@ -4497,6 +4499,9 @@ export default function ControlPage() {
     <main
       className={`control-dashboard control-dashboard-v2${botFailureCount > 0 ? " has-operational-alert" : ""}`}
     >
+      <a className="control-skip-link" href="#control-main-content">
+        PULAR PARA O CONTEÚDO
+      </a>
       <header>
         <div className="control-login-brand">
           THENEES<span>°</span> CONTROL
@@ -4590,6 +4595,7 @@ export default function ControlPage() {
       <aside
         className={`control-sidebar${mobileMenuOpen ? " mobile-open" : ""}`}
         id="control-main-navigation"
+        aria-label="Menu principal do Control"
       >
         <div className="control-sidebar-intro">
           <small>PAINEL DE CONTROLE</small>
@@ -4606,6 +4612,7 @@ export default function ControlPage() {
               <button
                 className="control-nav-category"
                 type="button"
+                aria-expanded={selectedArea.startsWith(`${group.number}-`)}
                 disabled={group.items.every(([number]) =>
                   unavailableControlAreas.has(`${group.number}-${number}`),
                 )}
@@ -4652,6 +4659,7 @@ export default function ControlPage() {
                       <button
                         className={`${selectedArea === area ? "selected " : ""}${unavailable ? "unavailable" : ""}`}
                         type="button"
+                        aria-current={selectedArea === area ? "page" : undefined}
                         disabled={unavailable}
                         onClick={() => requestAreaChange(area)}
                       >
@@ -4694,6 +4702,9 @@ export default function ControlPage() {
       </aside>
       <section
         className="control-workspace"
+        id="control-main-content"
+        tabIndex={-1}
+        aria-label={`${selectedGroup?.title ?? "Control"}: ${selectedItem?.[1] ?? "Visão geral"}`}
         onFocusCapture={(event) => {
           const target = event.target as HTMLElement;
           if (!target.matches("input,textarea,select,[contenteditable='true']")) return;
@@ -7221,6 +7232,9 @@ export default function ControlPage() {
                               : "Ativar comando"
                           }
                         >
+                          <em className="control-visually-hidden">
+                            {command.enabled ? "Desativar" : "Ativar"} {command.command}
+                          </em>
                           <input
                             type="checkbox"
                             checked={command.enabled}
@@ -7768,6 +7782,9 @@ export default function ControlPage() {
                                 : "Ativar automação"
                             }
                           >
+                            <em className="control-visually-hidden">
+                              {automation.enabled ? "Desativar" : "Ativar"} automação {automation.label}
+                            </em>
                             <input
                               type="checkbox"
                               checked={automation.enabled}
@@ -7977,9 +7994,11 @@ export default function ControlPage() {
                 <>
                   <div
                     className="control-outbox-filters"
+                    role="group"
                     aria-label="Filtrar fila"
                   >
                     <button
+                      aria-pressed={outboxFilter === "all"}
                       className={outboxFilter === "all" ? "active" : ""}
                       type="button"
                       onClick={() => setOutboxFilter("all")}
@@ -7987,6 +8006,7 @@ export default function ControlPage() {
                       TODOS {botOutbox.length}
                     </button>
                     <button
+                      aria-pressed={outboxFilter === "pending"}
                       className={outboxFilter === "pending" ? "active" : ""}
                       type="button"
                       onClick={() => setOutboxFilter("pending")}
@@ -7998,6 +8018,7 @@ export default function ControlPage() {
                       }
                     </button>
                     <button
+                      aria-pressed={outboxFilter === "failed"}
                       className={outboxFilter === "failed" ? "active" : ""}
                       type="button"
                       onClick={() => setOutboxFilter("failed")}
@@ -8009,6 +8030,7 @@ export default function ControlPage() {
                       }
                     </button>
                     <button
+                      aria-pressed={outboxFilter === "sent"}
                       className={outboxFilter === "sent" ? "active" : ""}
                       type="button"
                       onClick={() => setOutboxFilter("sent")}
@@ -8020,11 +8042,11 @@ export default function ControlPage() {
                       }
                     </button>
                   </div>
-                  <div className="control-outbox-filters control-outbox-source-filters" aria-label="Filtrar origem">
-                    <button className={outboxSourceFilter === "automation" ? "active" : ""} type="button" onClick={() => setOutboxSourceFilter("automation")}>EVENTOS AUTOMÁTICOS</button>
-                    <button className={outboxSourceFilter === "timer" ? "active" : ""} type="button" onClick={() => setOutboxSourceFilter("timer")}>TIMERS</button>
-                    <button className={outboxSourceFilter === "command" ? "active" : ""} type="button" onClick={() => setOutboxSourceFilter("command")}>COMANDOS</button>
-                    <button className={outboxSourceFilter === "all" ? "active" : ""} type="button" onClick={() => setOutboxSourceFilter("all")}>TODAS AS ORIGENS</button>
+                  <div className="control-outbox-filters control-outbox-source-filters" role="group" aria-label="Filtrar origem">
+                    <button aria-pressed={outboxSourceFilter === "automation"} className={outboxSourceFilter === "automation" ? "active" : ""} type="button" onClick={() => setOutboxSourceFilter("automation")}>EVENTOS AUTOMÁTICOS</button>
+                    <button aria-pressed={outboxSourceFilter === "timer"} className={outboxSourceFilter === "timer" ? "active" : ""} type="button" onClick={() => setOutboxSourceFilter("timer")}>TIMERS</button>
+                    <button aria-pressed={outboxSourceFilter === "command"} className={outboxSourceFilter === "command" ? "active" : ""} type="button" onClick={() => setOutboxSourceFilter("command")}>COMANDOS</button>
+                    <button aria-pressed={outboxSourceFilter === "all"} className={outboxSourceFilter === "all" ? "active" : ""} type="button" onClick={() => setOutboxSourceFilter("all")}>TODAS AS ORIGENS</button>
                   </div>
                   {visibleOutbox.length === 0 ? (
                     <div className="control-community-empty">
@@ -8681,6 +8703,9 @@ export default function ControlPage() {
                               timer.enabled ? "Desativar timer" : "Ativar timer"
                             }
                           >
+                            <em className="control-visually-hidden">
+                              {timer.enabled ? "Desativar" : "Ativar"} timer {timer.label}
+                            </em>
                             <input
                               type="checkbox"
                               checked={timer.enabled}

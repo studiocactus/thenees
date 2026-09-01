@@ -15,6 +15,34 @@
   display: none;
 }
 
+.control-skip-link {
+  position:fixed;
+  z-index:120;
+  left:18px;
+  top:14px;
+  padding:12px 16px;
+  border:2px solid #c5ff00;
+  background:#090a0c;
+  color:#c5ff00;
+  font:8px var(--font-pixel);
+  transform:translateY(-180%);
+  transition:transform .16s ease;
+}
+
+.control-skip-link:focus { transform:translateY(0); }
+
+.control-dashboard-v2 :where(a,button,input,select,textarea,[tabindex]):focus-visible {
+  outline:2px solid #c5ff00!important;
+  outline-offset:3px!important;
+}
+
+.control-dashboard-v2 :where(button,input,select,textarea):disabled {
+  opacity:.55;
+  cursor:not-allowed;
+}
+
+.control-workspace:focus { outline:none!important; }
+
 .control-user-area,
 .control-user-copy {
   display: flex;
@@ -82,7 +110,7 @@
 
 @keyframes control-save-status-pulse { 50% { opacity:.35;transform:scale(.72); } }
 
-@media(prefers-reduced-motion:reduce){.control-user-area .control-unsaved-status.saving i{animation:none}}
+@media(prefers-reduced-motion:reduce){.control-user-area .control-unsaved-status.saving i{animation:none}.control-skip-link{transition:none}}
 
 .control-dashboard-v2 > .control-sidebar {
   padding: 0;
