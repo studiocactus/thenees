@@ -29,6 +29,12 @@
   font-weight:700!important;
   line-height:1!important;
 }
+.control-dashboard-v2 .control-sidebar .control-nav-children .control-nav-section-label span{
+  font:inherit!important;
+  font-size:12px!important;
+  font-weight:700!important;
+  line-height:1!important;
+}
 .control-dashboard-v2 .control-sidebar .control-nav-children .control-nav-item{
   font-size:10px!important;
   line-height:1.45!important;
