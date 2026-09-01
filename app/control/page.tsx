@@ -8619,6 +8619,7 @@ export default function ControlPage() {
                 <span>MENSAGEM</span>
                 <span>INTERVALO</span>
                 <span>PLATAFORMA</span>
+                <span>ENVIO</span>
                 <span />
               </div>
               <div className="control-timer-list">
@@ -8670,8 +8671,13 @@ export default function ControlPage() {
                           >
                             <b>{timer.label || "TIMER SEM NOME"}</b>
                             <em>{timer.message_template}</em>
-                            <small>{timer.interval_minutes} MIN</small>
-                            <strong>{timer.target_platform}</strong>
+                            <small>A CADA {timer.interval_minutes} MIN</small>
+                            <strong>{timer.target_platform === "BOTH" ? "TWITCH + KICK" : timer.target_platform}</strong>
+                            <span className={timer.delivery_mode === "announcement" ? "announcement" : "message"}>
+                              {timer.delivery_mode === "announcement"
+                                ? `ANÚNCIO · ${timer.announcement_color === "primary" ? "PADRÃO" : timer.announcement_color.toUpperCase()}`
+                                : "MENSAGEM COMUM"}
+                            </span>
                             <i><ControlIcon name={isOpen ? "minus" : "arrowDown"} size={16} /></i>
                           </button>
                         </div>
@@ -8681,9 +8687,18 @@ export default function ControlPage() {
                             id={`timer-${timer.id}`}
                             data-tab={timerEditorTabs[timer.id] ?? "basic"}
                           >
+                            <div className="control-timer-edit-summary">
+                              <div>
+                                <small>PROGRAMAÇÃO ATUAL</small>
+                                <b>A CADA {timer.interval_minutes} MINUTOS</b>
+                              </div>
+                              <span>{timer.target_platform === "BOTH" ? "TWITCH + KICK" : timer.target_platform}</span>
+                              <span>{timer.run_when === "online" ? "SOMENTE COM A LIVE ONLINE" : timer.run_when === "offline" ? "SOMENTE COM A LIVE OFFLINE" : "SEMPRE"}</span>
+                              <span>{timer.delivery_mode === "announcement" ? "ANÚNCIO NA TWITCH" : "MENSAGEM COMUM"}</span>
+                            </div>
                             <nav className="control-command-editor-tabs" aria-label={`Configurações de ${timer.label}`}>
-                              <button type="button" className={(timerEditorTabs[timer.id] ?? "basic") === "basic" ? "active" : ""} onClick={() => setTimerEditorTabs((tabs) => ({ ...tabs, [timer.id]: "basic" }))}>AJUSTES</button>
-                              <button type="button" className={timerEditorTabs[timer.id] === "advanced" ? "active" : ""} onClick={() => setTimerEditorTabs((tabs) => ({ ...tabs, [timer.id]: "advanced" }))}>CONFIGURAÇÕES AVANÇADAS</button>
+                              <button type="button" className={(timerEditorTabs[timer.id] ?? "basic") === "basic" ? "active" : ""} onClick={() => setTimerEditorTabs((tabs) => ({ ...tabs, [timer.id]: "basic" }))}>MENSAGEM</button>
+                              <button type="button" className={timerEditorTabs[timer.id] === "advanced" ? "active" : ""} onClick={() => setTimerEditorTabs((tabs) => ({ ...tabs, [timer.id]: "advanced" }))}>PROGRAMAÇÃO E ENVIO</button>
                             </nav>
                             <label className="timer-basic">
                               NOME DO TIMER
@@ -8725,7 +8740,7 @@ export default function ControlPage() {
                                 <option value="KICK">KICK</option>
                               </select>
                             </label>
-                            <label className="timer-basic">
+                            <label className="timer-advanced">
                               INTERVALO / MIN
                               <input
                                 type="number"
