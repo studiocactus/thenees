@@ -157,21 +157,30 @@
 }
 
 .control-nav-category-number {
-  display: block !important;
+  height: 17px;
+  display: flex !important;
+  align-items: center;
   grid-column: 1;
+  align-self: center;
   color: #666a71;
   font-size: 8px;
+  line-height: 1;
+  transform: translateY(7px);
   transition: color .22s ease;
 }
 
 .control-nav-category-icon {
   grid-column: 2;
+  align-self: center;
   color: #777b83;
   transition: color .22s ease, transform .22s ease;
 }
 
 .control-nav-category b {
   grid-column: 3;
+  align-self: center;
+  line-height: 1;
+  transform: translateY(1px);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -179,6 +188,8 @@
 
 .control-nav-category i {
   grid-column: 4;
+  align-self: center;
+  line-height: 1;
   color: #666a71;
   font-style: normal;
   text-align: right;
@@ -289,6 +300,7 @@
 
 .control-nav-item-icon {
   grid-column: 2;
+  align-self: center;
   color: #666b74;
   transition: color .18s ease, transform .18s ease;
 }
@@ -306,8 +318,11 @@
 
 .control-nav-item b {
   grid-column: 3;
+  align-self: center;
   min-width: 0;
   font: inherit;
+  line-height: 1.35;
+  transform: translateY(1px);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -334,16 +349,23 @@
 }
 
 .control-nav-item-number {
-  display: inline-block !important;
+  height: 14px;
+  display: flex !important;
+  align-items: center;
   grid-column: 1;
+  align-self: center;
   color: #565961;
   font-size: 7px;
+  line-height: 1;
+  transform: translateY(7px);
 }
 
 .control-nav-section-label {
   min-height: 30px;
-  margin: 14px 0 6px;
-  padding: 0 10px;
+  width: auto;
+  margin: 14px -16px 6px -42px;
+  padding: 0 16px 0 42px;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: 9px;
@@ -360,6 +382,8 @@
   display:block !important;
   width:auto;
   color:inherit;
+  line-height:1;
+  transform:translateY(1px);
 }
 
 .control-nav-section-label:first-child {
@@ -637,6 +661,10 @@
     background: #111216;
     border-top: 0;
     animation: control-nav-reveal .24s cubic-bezier(.22,1,.36,1) both;
+  }
+
+  .control-nav-section-label {
+    margin-left: -38px;
   }
 
   .control-dashboard-v2 > .control-sidebar .control-nav-children button {
