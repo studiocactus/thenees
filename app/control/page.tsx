@@ -848,8 +848,11 @@ const navigationGroups = [
   },
   {
     number: "03",
-    title: "ARQUIVO DA COMUNIDADE",
-    items: [["02", "QUOTES"]],
+    title: "CONTEÚDO & LINKS",
+    items: [
+      ["02", "QUOTES"],
+      ["04", "LINKS DO CHAT"],
+    ],
   },
   {
     number: "04",
@@ -874,7 +877,6 @@ const navigationGroups = [
     title: "ADMINISTRAÇÃO",
     items: [
       ["01", "EQUIPE E ACESSOS"],
-      ["02", "INTEGRAÇÕES"],
       ["03", "SISTEMA"],
     ],
   },
@@ -8507,11 +8509,11 @@ export default function ControlPage() {
           <section className="control-shortener">
             <div className="control-editor-heading">
               <div>
-                <small>03.04 / ARROBASRV</small>
-                <h2>ENCURTADOR DE LINKS</h2>
+                <small>03.04 / CONTEÚDO & LINKS</small>
+                <h2>LINKS DO CHAT</h2>
                 <p>
-                  Crie endereços curtos e fáceis de usar no chat, comandos e
-                  campanhas da comunidade.
+                  Crie endereços curtos para compartilhar no chat, nas redes
+                  sociais e nas campanhas da comunidade.
                 </p>
               </div>
               <span>
