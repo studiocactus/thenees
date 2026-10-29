@@ -25,7 +25,7 @@ const defaultOfficialLinks = {
   youtubeUrl: "https://www.youtube.com/@theneesr",
   channels: [{platform:"TWITCH",url:"https://www.twitch.tv/thenees"},{platform:"KICK",url:"https://kick.com/thenees"},{platform:"YOUTUBE",url:"https://www.youtube.com/@theneesr"},{platform:"DISCORD",url:"https://discord.gg/fUEG3h2ED"}],
 };
-const defaultSiteContent = { aboutText:"Thenees transforma live em playground. Aqui a comunidade não fica só olhando — ela vota, interfere, compete e, ocasionalmente, destrói qualquer chance de vitória.",gameText:"Um game persistente que nasce dentro do chat da live. Cada pessoa cria seu personagem, participa usando comandos e, quando a transmissão termina, continua a jornada em sua própria área de perfil.",communityText:"Uma comunidade construída para participar, criar memória e transformar cada transmissão em uma experiência coletiva.",partnersText:"Projetos criativos, conteúdo autêntico e uma comunidade que realmente participa. Vamos criar algo que as pessoas queiram assistir — e lembrar.",labText:"Bots, ferramentas para o chat, encurtador de links, integrações e ideias perigosamente próximas de virar produto.",footerTagline:"Streamer, criador e responsável por transformar interação em experiência.",footerBusinessText:"Parcerias, projetos, eventos e ideias perigosamente próximas de funcionar." };
+const defaultSiteContent = { aboutText:"Thenees transforma live em playground. Aqui a comunidade não fica só olhando — ela vota, interfere, compete e, ocasionalmente, destrói qualquer chance de vitória.",gameText:"Um game persistente conectado à comunidade. Cada pessoa cria seu personagem, participa das decisões coletivas e, quando a transmissão termina, continua a jornada em sua própria área de perfil.",communityText:"Uma comunidade construída para participar, criar memória e transformar cada transmissão em uma experiência coletiva.",partnersText:"Projetos criativos, conteúdo autêntico e uma comunidade que realmente participa. Vamos criar algo que as pessoas queiram assistir — e lembrar.",labText:"Experiências interativas, ferramentas para a comunidade e ideias perigosamente próximas de virar produto.",footerTagline:"Streamer, criador e responsável por transformar interação em experiência.",footerBusinessText:"Parcerias, projetos, eventos e ideias perigosamente próximas de funcionar." };
 
 type HeroContent = {
   eyebrow: string; version: string; titleLine1: string; titleLine2Lead: string; titleLine2Accent: string;
@@ -82,21 +82,20 @@ const adminLiveEventEffectsPreview = {
 } as const;
 
 const chatBattleSequence = [
-  { type: "bot", name: "ArrobaSrv", text: "Uma criatura bloqueou o caminho. Comunidade, escolham uma ação!" },
-  { type: "user", name: "gabi.exe", text: "!atacar" },
-  { type: "user", name: "luquinhas_77", text: "!defender" },
-  { type: "bot", name: "ArrobaSrv", text: "Comandos registrados: ataque coletivo + escudo de grupo." },
+  { type: "system", name: "SISTEMA DO JOGO", text: "Uma criatura bloqueou o caminho. Comunidade, escolham uma ação!" },
+  { type: "user", name: "gabi.exe", text: "Voto em atacar" },
+  { type: "user", name: "luquinhas_77", text: "Voto em defender" },
+  { type: "system", name: "SISTEMA DO JOGO", text: "Decisões registradas: ataque coletivo + escudo de grupo." },
   { type: "event", name: "FOLLOW", text: "mari_player entrou na comunidade. Energia coletiva +8%." },
   { type: "event", name: "BITS", text: "pixelmago enviou 250 bits. Medidor de caos em 72%." },
   { type: "event", name: "SUB", text: "nina_zero virou sub. Buff de grupo desbloqueado: DOBRO DE CORAGEM." },
   { type: "event", name: "DONATE", text: "rafa.exe ativou um evento global: CHEFE SURPRESA." },
-  { type: "bot", name: "ArrobaSrv", text: "NOVO PLAYER: @byte_mari entrou no ChatBattle. Categoria: GUARDIÃ. Boas-vindas à comunidade!" },
+  { type: "system", name: "SISTEMA DO JOGO", text: "NOVO PLAYER: @byte_mari entrou no ChatBattle. Categoria: GUARDIÃ. Boas-vindas à comunidade!" },
   { type: "event", name: "ANIVERSÁRIO", text: "Hoje é aniversário de @pixelmago! Comunidade, enviem parabéns e muitos buffs no chat!" },
-  { type: "bot", name: "ArrobaSrv", text: "Golpe coletivo: 418 de dano. Recompensa compartilhada com toda a comunidade." },
+  { type: "system", name: "SISTEMA DO JOGO", text: "Golpe coletivo: 418 de dano. Recompensa compartilhada com toda a comunidade." },
 ] as const;
 
-// Preview of approved quotes. In production these records are created by the
-// bot only when !quote is used by the broadcaster or an authorized moderator.
+// Preview of approved quotes managed directly in Thenees Control.
 const adminQuotesPreview = [
   { text: "Eu vim pela gameplay. Fiquei pelo desastre.", author: "gabi.exe", date: "09/08/2026", platform: "TWITCH" },
   { text: "Tecnicamente não perdemos. Só paramos de ganhar.", author: "pixelmago", date: "02/08/2026", platform: "KICK" },
@@ -738,8 +737,8 @@ export default function Home() {
         <div className="game-demo">
           {gameMode === "live" ? (
             <div className="chat-mode">
-              <div className="demo-copy"><span className="demo-label"><i /> LIVE MODE</span><h3>O CHAT É O<br />CONTROLE.</h3><p>Comandos, follows, subs, bits e donates podem ativar batalhas, buffs, itens e eventos coletivos sem ninguém sair da transmissão.</p><div className="live-events" aria-label="Eventos que afetam o game">{Object.entries(adminLiveEventEffectsPreview).map(([key, event]) => <button type="button" className={selectedLiveEvent === key ? "active" : ""} aria-pressed={selectedLiveEvent === key} key={key} onClick={() => setSelectedLiveEvent(key as keyof typeof adminLiveEventEffectsPreview)}>{event.label}</button>)}</div><div className="event-explanation" aria-live="polite"><small>EFEITO / {adminLiveEventEffectsPreview[selectedLiveEvent].label}</small><strong>{adminLiveEventEffectsPreview[selectedLiveEvent].title}</strong><p>{adminLiveEventEffectsPreview[selectedLiveEvent].effect}</p><em>CONTEÚDO EDITÁVEL NO ADMIN</em></div><div className="community-rule"><small>REGRA_01 / SEM PAY-TO-WIN</small><strong>A COMUNIDADE<br />SEMPRE GANHA.</strong><p>O apoio muda o caminho e aumenta o caos — nunca compra a vitória de uma pessoa sobre as outras.</p></div><div className="command-list"><code>!atacar</code><code>!defender</code><code>!inventário</code><code>!grupo</code></div></div>
-              <div className="chat-window"><div className="demo-bar"><b>CHAT / RAID_042</b><span>● 142 ONLINE</span></div><div className="chat-lines"><div className="animated-chat" aria-live="polite">{chatBattleSequence.slice(0, Math.min(chatStep, chatBattleSequence.length)).map((message, index) => <p className={`chat-message ${message.type}`} key={`${message.name}-${index}`}><b className={message.type === "bot" ? "lime-name" : ""}>{message.name}</b><span>{message.text}</span></p>)}{chatStep < chatBattleSequence.length && <div className="bot-typing"><i /><i /><i /><span>ARROBASRV PROCESSANDO EVENTO</span></div>}</div><div className="battle-status"><div className="meter-row"><span>COMUNIDADE</span><i><em style={{ width: `${communityPower}%` }} /></i><strong>{communityPower}%</strong></div><div className="meter-row creature"><span>CRIATURA</span><i><em style={{ width: `${creaturePower}%` }} /></i><strong>{creaturePower}%</strong></div></div><div className="chat-input">ENVIAR UMA MENSAGEM <span>↵</span></div></div></div>
+              <div className="demo-copy"><span className="demo-label"><i /> LIVE MODE</span><h3>A COMUNIDADE<br />DECIDE.</h3><p>Votações e decisões coletivas podem ativar batalhas, buffs, itens e eventos sem depender de comandos em plataformas externas.</p><div className="live-events" aria-label="Eventos que afetam o game">{Object.entries(adminLiveEventEffectsPreview).map(([key, event]) => <button type="button" className={selectedLiveEvent === key ? "active" : ""} aria-pressed={selectedLiveEvent === key} key={key} onClick={() => setSelectedLiveEvent(key as keyof typeof adminLiveEventEffectsPreview)}>{event.label}</button>)}</div><div className="event-explanation" aria-live="polite"><small>EFEITO / {adminLiveEventEffectsPreview[selectedLiveEvent].label}</small><strong>{adminLiveEventEffectsPreview[selectedLiveEvent].title}</strong><p>{adminLiveEventEffectsPreview[selectedLiveEvent].effect}</p><em>CONTEÚDO EDITÁVEL NO ADMIN</em></div><div className="community-rule"><small>REGRA_01 / SEM PAY-TO-WIN</small><strong>A COMUNIDADE<br />SEMPRE GANHA.</strong><p>O apoio muda o caminho e aumenta o caos — nunca compra a vitória de uma pessoa sobre as outras.</p></div><div className="command-list"><code>ATACAR</code><code>DEFENDER</code><code>INVENTÁRIO</code><code>GRUPO</code></div></div>
+              <div className="chat-window"><div className="demo-bar"><b>COMUNIDADE / RAID_042</b><span>● 142 ONLINE</span></div><div className="chat-lines"><div className="animated-chat" aria-live="polite">{chatBattleSequence.slice(0, Math.min(chatStep, chatBattleSequence.length)).map((message, index) => <p className={`chat-message ${message.type}`} key={`${message.name}-${index}`}><b className={message.type === "system" ? "lime-name" : ""}>{message.name}</b><span>{message.text}</span></p>)}{chatStep < chatBattleSequence.length && <div className="bot-typing"><i /><i /><i /><span>SISTEMA PROCESSANDO DECISÃO</span></div>}</div><div className="battle-status"><div className="meter-row"><span>COMUNIDADE</span><i><em style={{ width: `${communityPower}%` }} /></i><strong>{communityPower}%</strong></div><div className="meter-row creature"><span>CRIATURA</span><i><em style={{ width: `${creaturePower}%` }} /></i><strong>{creaturePower}%</strong></div></div><div className="chat-input">PARTICIPAR DA DECISÃO <span>↵</span></div></div></div>
             </div>
           ) : (
             <div className="profile-mode">
@@ -749,7 +748,7 @@ export default function Home() {
           )}
         </div>
         <div className="feature-grid">
-          <article><b>01</b><div className="feature-icon pixel-chat" aria-hidden="true"><i /><i /><i /></div><h3>JOGUE PELO CHAT</h3><p>Comandos simples viram ações dentro do game durante a live.</p></article>
+          <article><b>01</b><div className="feature-icon pixel-chat" aria-hidden="true"><i /><i /><i /></div><h3>DECIDA EM COMUNIDADE</h3><p>Votações simples viram ações dentro do game durante a live.</p></article>
           <article><b>02</b><div className="feature-icon pixel-player" aria-hidden="true"><i /><i /></div><h3>UM BONECO SÓ SEU</h3><p>Seu personagem mantém nível, itens e história entre as transmissões.</p></article>
           <article><b>03</b><div className="feature-icon pixel-level" aria-hidden="true"><i /><i /><i /><span>XP</span></div><h3>EVOLUÇÃO CONTÍNUA</h3><p>Acesse seu perfil no off e prepare-se para a próxima aventura.</p></article>
         </div>
@@ -769,7 +768,7 @@ export default function Home() {
             <blockquote key={quoteIndex}>“{communityQuotes[quoteIndex]?.quote_text}”</blockquote>
             <div className="quote-meta"><strong>— {communityQuotes[quoteIndex]?.author_name}</strong><span>{communityQuotes[quoteIndex]?.platform} · {communityQuotes[quoteIndex]?.quoted_at ? new Date(communityQuotes[quoteIndex].quoted_at).toLocaleDateString("pt-BR",{timeZone:"America/Sao_Paulo"}) : ""}</span></div>
             <div className="quote-progress">{communityQuotes.map((quote, index) => <i className={quoteIndex === index ? "active" : ""} key={quote.id} />)}</div>
-            <div className="quote-bot-confirm"><span>ARROBASRV / RESPOSTA NO CHAT</span><p>@{communityQuotes[quoteIndex]?.author_name}, sua frase entrou para o arquivo da comunidade! Veja em <b>{officialLinks.communityUrl}</b></p></div>
+            <div className="quote-bot-confirm"><span>ARQUIVO DA COMUNIDADE / PUBLICAÇÃO</span><p>A frase de @{communityQuotes[quoteIndex]?.author_name} entrou para o arquivo da comunidade.</p></div>
           </div>
         </div>
       </section>
@@ -788,11 +787,10 @@ export default function Home() {
           <div className="terminal-body lab-board">
             <div className="lab-board-head"><div><span>PAINEL DE EXPERIMENTOS</span><strong>3 PROJETOS EM TESTE</strong></div><small>BUILD 0.6.2 / COMUNIDADE</small></div>
             <div className="lab-projects">
-              <article className="lab-project active"><span>01</span><div><small>GAME + CHAT</small><strong>CHATBATTLE</strong><p>Comandos da comunidade viram ações dentro do jogo.</p></div><aside><b>EM CONSTRUÇÃO</b><i><em style={{ width: "72%" }} /></i><small>72%</small></aside></article>
-              <article className="lab-project"><span>02</span><div><small>FERRAMENTA</small><strong>ARROBASRV</strong><p>Eventos, quotes, novos players e aniversários na Twitch e Kick.</p></div><aside><b>PROTÓTIPO</b><i><em style={{ width: "46%" }} /></i><small>46%</small></aside></article>
-              <article className="lab-project"><span>03</span><div><small>UTILIDADE</small><strong>LINKS DO CHAT</strong><p>Links curtos, rastreáveis e controlados pelo painel.</p></div><aside><b>EM TESTE</b><i><em style={{ width: "28%" }} /></i><small>28%</small></aside></article>
+              <article className="lab-project active"><span>01</span><div><small>GAME + COMUNIDADE</small><strong>CHATBATTLE</strong><p>Decisões da comunidade viram ações dentro do jogo.</p></div><aside><b>EM CONSTRUÇÃO</b><i><em style={{ width: "72%" }} /></i><small>72%</small></aside></article>
+              <article className="lab-project"><span>03</span><div><small>UTILIDADE</small><strong>LINKS DA COMUNIDADE</strong><p>Links curtos, rastreáveis e controlados pelo painel.</p></div><aside><b>EM TESTE</b><i><em style={{ width: "28%" }} /></i><small>28%</small></aside></article>
             </div>
-            <div className="lab-log"><span>ÚLTIMO EVENTO</span><p><b>ARROBASRV:</b> nova ideia detectada. chance de funcionar: <em>63%</em><i className="cursor">_</i></p></div>
+            <div className="lab-log"><span>ÚLTIMA ATUALIZAÇÃO</span><p><b>THENEES LAB:</b> nova ideia detectada. chance de funcionar: <em>63%</em><i className="cursor">_</i></p></div>
           </div>
         </div>
       </section>
@@ -800,9 +798,9 @@ export default function Home() {
       <section className="control" id="control">
         <div className="control-ui">
           <div className="control-nav"><b>THENEES° <span>CONTROL</span></b><i>● CONNECTED</i></div>
-          <div className="control-grid"><aside><span>OVERVIEW</span><span>LIVE CONTROL</span><span>GAME MASTER</span><span>LINKS</span><span>BOT</span><span>CONTENT</span></aside><div className="control-main"><small>GOOD EVENING, THENEES.</small><h3>ALL SYSTEMS<br /><span>OPERATIONAL.</span></h3><div className="control-cards"><div>LIVE STATUS<strong>OFFLINE</strong></div><div>BOT STATUS<strong className="green">ONLINE</strong></div><div>ACTIVE LINKS<strong>24</strong></div></div></div></div>
+          <div className="control-grid"><aside><span>OVERVIEW</span><span>LIVE CONTROL</span><span>GAME MASTER</span><span>LINKS</span><span>COMMUNITY</span><span>CONTENT</span></aside><div className="control-main"><small>GOOD EVENING, THENEES.</small><h3>ALL SYSTEMS<br /><span>OPERATIONAL.</span></h3><div className="control-cards"><div>LIVE STATUS<strong>OFFLINE</strong></div><div>COMMUNITY<strong className="green">ACTIVE</strong></div><div>ACTIVE LINKS<strong>24</strong></div></div></div></div>
         </div>
-        <div className="control-copy"><div className="section-tag"><span>SYS</span><b>ONLINE / ACESSO RESTRITO</b></div><h2>THENEES<br /><span>CONTROL.</span></h2><p>O painel central para controlar o site, a live, o game, o bot e tudo que ainda nem inventamos.</p><a className="locked" href="/control">▣ ADMIN ACCESS <b>ENTRAR →</b></a></div>
+        <div className="control-copy"><div className="section-tag"><span>SYS</span><b>ONLINE / ACESSO RESTRITO</b></div><h2>THENEES<br /><span>CONTROL.</span></h2><p>O painel central para controlar o site, a live, o game, a comunidade e tudo que ainda nem inventamos.</p><a className="locked" href="/control">▣ ADMIN ACCESS <b>ENTRAR →</b></a></div>
       </section>
 
       <footer className="site-footer">

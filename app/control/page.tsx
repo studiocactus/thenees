@@ -23,6 +23,11 @@ import "./command-audit-filters.css";
 import "./timer-tabs.css";
 import "./runtime-diagnostics.css";
 
+// The legacy Twitch/Kick bot runtime was retired in October 2026.
+// Keep the old editor code isolated during the final source cleanup, but never
+// load, subscribe to or persist any of its data.
+const BOT_RUNTIME_ENABLED = false;
+
 const choosePreviewMessageVariant = (value: string) => {
   const variants = value
     .split(/\r?\n/)
@@ -290,7 +295,6 @@ type CommunityQuote = {
   approved: boolean;
   status: "pending" | "approved" | "rejected" | "archived";
   submitted_by: string;
-  bot_announced_at: string | null;
 };
 type BirthdayPlayer = {
   id: string;
@@ -844,19 +848,8 @@ const navigationGroups = [
   },
   {
     number: "03",
-    title: "ARROBASRV",
-    items: [
-      ["00", "PAINEL DO BOT"],
-      ["01", "COMANDOS"],
-      ["09", "TIMERS"],
-      ["03", "AUTOMAÇÕES & EVENTOS"],
-      ["02", "QUOTES"],
-      ["06", "NOVO COMANDO"],
-      ["04", "LINKS DO CHAT"],
-      ["07", "CONTADORES"],
-      ["05", "GUIA DA MODERAÇÃO"],
-      ["08", "CONEXÕES & SAÚDE"],
-    ],
+    title: "ARQUIVO DA COMUNIDADE",
+    items: [["02", "QUOTES"]],
   },
   {
     number: "04",
@@ -910,17 +903,6 @@ const backendTableDefinitions = [
   ["JOGADORES", "game_players"],
   ["PRESENÇA NO GAME", "game_presence"],
   ["CONVITES DA EQUIPE", "admin_invites"],
-  ["CANAIS DO BOT", "bot_channels"],
-  ["COMANDOS DO BOT", "bot_commands"],
-  ["AUTOMAÇÕES DO BOT", "bot_automations"],
-  ["TIMERS DO CHAT", "bot_chat_timers"],
-  ["FILA DO BOT", "bot_outbox"],
-  ["ENTREGAS DO BOT", "bot_delivery_logs"],
-  ["PRESENÇA NO CHAT", "bot_chat_presence"],
-  ["CONTADORES POR USUÁRIO", "bot_user_counters"],
-  ["INTEGRAÇÕES", "platform_integrations"],
-  ["EVENTOS DAS PLATAFORMAS", "platform_events"],
-  ["EVENTSUB TWITCH", "twitch_eventsub_subscriptions"],
   ["LINKS CURTOS", "short_links"],
 ] as const;
 
@@ -973,13 +955,13 @@ const defaultSiteContent: SiteContent = {
   aboutText:
     "Thenees transforma live em playground. Aqui a comunidade não fica só olhando — ela vota, interfere, compete e, ocasionalmente, destrói qualquer chance de vitória.",
   gameText:
-    "Um game persistente que nasce dentro do chat da live. Cada pessoa cria seu personagem, participa usando comandos e, quando a transmissão termina, continua a jornada em sua própria área de perfil.",
+    "Um game persistente conectado à comunidade. Cada pessoa cria seu personagem, participa das decisões coletivas e, quando a transmissão termina, continua a jornada em sua própria área de perfil.",
   communityText:
     "Uma comunidade construída para participar, criar memória e transformar cada transmissão em uma experiência coletiva.",
   partnersText:
     "Projetos criativos, conteúdo autêntico e uma comunidade que realmente participa. Vamos criar algo que as pessoas queiram assistir — e lembrar.",
   labText:
-    "Bots, ferramentas para o chat, encurtador de links, integrações e ideias perigosamente próximas de virar produto.",
+    "Experiências interativas, ferramentas para a comunidade e ideias perigosamente próximas de virar produto.",
   footerTagline:
     "Streamer, criador e responsável por transformar interação em experiência.",
   footerBusinessText:
@@ -1006,23 +988,12 @@ const officialPlatformOptions = [
   "SPOTIFY",
   "LINKEDIN",
 ];
-const arrobaSrvMenuSections: Record<string, string> = {
-  "03-00": "CENTRAL",
-  "03-01": "MENSAGENS",
-  "03-09": "MENSAGENS",
-  "03-03": "MENSAGENS",
-  "03-02": "MENSAGENS",
-  "03-06": "FERRAMENTAS",
-  "03-04": "FERRAMENTAS",
-  "03-07": "FERRAMENTAS",
-  "03-05": "FERRAMENTAS",
-  "03-08": "OPERAÇÃO",
-};
+const arrobaSrvMenuSections: Record<string, string> = {};
 const controlMenuGroupIcons: Record<string, ControlIconName> = {
   "00": "home",
   "01": "globe",
   "02": "dashboard",
-  "03": "bot",
+  "03": "quote",
   "04": "users",
   "05": "megaphone",
   "06": "settings",
@@ -1035,16 +1006,7 @@ const controlMenuSectionIcons: Record<string, ControlIconName> = {
   "OPERAÇÃO": "settings",
 };
 const controlMenuItemIcons: Record<string, ControlIconName> = {
-  "03-00": "dashboard",
-  "03-01": "command",
-  "03-09": "timer",
-  "03-03": "notification",
   "03-02": "quote",
-  "03-06": "add",
-  "03-04": "link",
-  "03-07": "chart",
-  "03-05": "help",
-  "03-08": "settings",
 };
 const defaultOfficialLinks: OfficialLinks = {
   twitch: "https://www.twitch.tv/thenees",
@@ -1174,16 +1136,7 @@ const implementedControlAreas = new Set([
   "01-02",
   "01-03",
   "01-04",
-  "03-00",
-  "03-01",
   "03-02",
-  "03-03",
-  "03-04",
-  "03-05",
-  "03-06",
-  "03-07",
-  "03-08",
-  "03-09",
   "04-01",
   "04-02",
   "05-01",
@@ -1485,7 +1438,6 @@ export default function ControlPage() {
     approved: true,
     status: "approved",
     submitted_by: "THENEES CONTROL",
-    bot_announced_at: null,
   });
   const [commercialContent, setCommercialContent] = useState<CommercialContent>(
     defaultCommercialContent,
@@ -2063,7 +2015,7 @@ export default function ControlPage() {
       supabase
         .from("community_quotes")
         .select(
-          "id,quote_number,quote_text,author_name,platform,quoted_at,approved,status,submitted_by,bot_announced_at",
+          "id,quote_number,quote_text,author_name,platform,quoted_at,approved,status,submitted_by",
         )
         .order("quoted_at", { ascending: false }),
       supabase
@@ -2078,7 +2030,7 @@ export default function ControlPage() {
       ? await supabase
           .from("community_quotes")
           .select(
-            "id,quote_text,author_name,platform,quoted_at,approved,status,submitted_by,bot_announced_at",
+            "id,quote_text,author_name,platform,quoted_at,approved,status,submitted_by",
           )
           .order("quoted_at", { ascending: false })
       : quotesWithNumber;
@@ -2330,6 +2282,7 @@ export default function ControlPage() {
   };
   useEffect(() => {
     if (
+      BOT_RUNTIME_ENABLED &&
       accessState === "authorized" &&
       admin &&
       ["owner", "admin", "moderator"].includes(admin.role)
@@ -2338,6 +2291,7 @@ export default function ControlPage() {
   }, [accessState, admin]);
   useEffect(() => {
     if (
+      BOT_RUNTIME_ENABLED &&
       accessState === "authorized" &&
       admin &&
       ["owner", "admin", "moderator"].includes(admin.role)
@@ -2345,7 +2299,7 @@ export default function ControlPage() {
       void loadBotUserCounters();
   }, [accessState, admin]);
   useEffect(() => {
-    if (accessState !== "authorized" || !admin || !botCommands.length) return;
+    if (!BOT_RUNTIME_ENABLED || accessState !== "authorized" || !admin || !botCommands.length) return;
     const snapshot = botCommandsSnapshot(botCommands);
     if (snapshot === lastBotCommandsSnapshot.current) return;
     if (botCommandAutosaveTimer.current)
@@ -2423,6 +2377,7 @@ export default function ControlPage() {
 
   useEffect(() => {
     if (
+      !BOT_RUNTIME_ENABLED ||
       accessState !== "authorized" ||
       !admin ||
       !["owner", "admin", "moderator"].includes(admin.role)
@@ -2528,7 +2483,7 @@ export default function ControlPage() {
     .join("|");
 
   useEffect(() => {
-    if (accessState !== "authorized" || !botChannels.length) return;
+    if (!BOT_RUNTIME_ENABLED || accessState !== "authorized" || !botChannels.length) return;
     const supabase = getSupabaseBrowserClient();
     void Promise.all(
       botChannels.map((item) =>
@@ -2547,7 +2502,7 @@ export default function ControlPage() {
   }, [channelStatusSignature, accessState]);
 
   useEffect(() => {
-    if (accessState !== "authorized" || !botCommands.length) return;
+    if (!BOT_RUNTIME_ENABLED || accessState !== "authorized" || !botCommands.length) return;
     const supabase = getSupabaseBrowserClient();
     void Promise.all(
       botCommands.map((item) =>
@@ -2565,7 +2520,7 @@ export default function ControlPage() {
   }, [commandStatusSignature, accessState]);
 
   useEffect(() => {
-    if (accessState !== "authorized" || !botAutomations.length) return;
+    if (!BOT_RUNTIME_ENABLED || accessState !== "authorized" || !botAutomations.length) return;
     const supabase = getSupabaseBrowserClient();
     void Promise.all(
       botAutomations.map((item) =>
@@ -2584,7 +2539,7 @@ export default function ControlPage() {
   }, [automationStatusSignature, accessState]);
 
   useEffect(() => {
-    if (accessState !== "authorized" || !botChatTimers.length) return;
+    if (!BOT_RUNTIME_ENABLED || accessState !== "authorized" || !botChatTimers.length) return;
     if (timerDeliverySignature === lastTimerDeliverySnapshot.current) return;
     const supabase = getSupabaseBrowserClient();
     const updatedAt = new Date().toISOString();
@@ -2629,6 +2584,7 @@ export default function ControlPage() {
   };
   useEffect(() => {
     if (
+      BOT_RUNTIME_ENABLED &&
       accessState === "authorized" &&
       admin &&
       ["owner", "admin", "moderator"].includes(admin.role)
@@ -2636,7 +2592,7 @@ export default function ControlPage() {
       void loadIntegrations();
   }, [accessState, admin]);
   useEffect(() => {
-    if (selectedArea !== "03-08" || accessState !== "authorized") return;
+    if (!BOT_RUNTIME_ENABLED || selectedArea !== "03-08" || accessState !== "authorized") return;
     void refreshRuntimeDiagnostics();
     const timer = window.setInterval(() => void refreshRuntimeDiagnostics(), 60000);
     return () => window.clearInterval(timer);
@@ -3005,8 +2961,6 @@ export default function ControlPage() {
       ...quoteDraft,
       quoted_at: saoPauloDateTimeInputToIso(quoteDraft.quoted_at),
       approved: quoteDraft.status === "approved",
-      bot_announced_at:
-        quoteDraft.status === "approved" ? new Date().toISOString() : null,
     };
     const { error } = await getSupabaseBrowserClient()
       .from("community_quotes")
