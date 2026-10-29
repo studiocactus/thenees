@@ -781,7 +781,7 @@ export default function Home() {
       </section>
 
       <section className="lab" id="lab">
-        <div className="lab-copy"><div className="section-tag"><span>06</span><b>THENEES LAB</b></div><p className="kicker">EXPERIMENTOS EM ANDAMENTO <i /></p><h2>COISAS QUE<br />TALVEZ <span>FUNCIONEM.</span></h2><p>{siteContent.labText}</p><a className="button primary" href="#control">EXPLORAR O LAB <span>→</span></a></div>
+        <div className="lab-copy"><div className="section-tag"><span>06</span><b>THENEES LAB</b></div><p className="kicker">EXPERIMENTOS EM ANDAMENTO <i /></p><h2>COISAS QUE<br />TALVEZ <span>FUNCIONEM.</span></h2><p>{siteContent.labText}</p></div>
         <div className="lab-terminal">
           <div className="terminal-bar"><span>THENEES_LAB.EXE</span><div className="lab-signal"><b>● LAB ONLINE</b><i /><i /><i /></div></div>
           <div className="terminal-body lab-board">
@@ -793,14 +793,6 @@ export default function Home() {
             <div className="lab-log"><span>ÚLTIMA ATUALIZAÇÃO</span><p><b>THENEES LAB:</b> nova ideia detectada. chance de funcionar: <em>63%</em><i className="cursor">_</i></p></div>
           </div>
         </div>
-      </section>
-
-      <section className="control" id="control">
-        <div className="control-ui">
-          <div className="control-nav"><b>THENEES° <span>CONTROL</span></b><i>● CONNECTED</i></div>
-          <div className="control-grid"><aside><span>OVERVIEW</span><span>LIVE CONTROL</span><span>GAME MASTER</span><span>LINKS</span><span>COMMUNITY</span><span>CONTENT</span></aside><div className="control-main"><small>GOOD EVENING, THENEES.</small><h3>ALL SYSTEMS<br /><span>OPERATIONAL.</span></h3><div className="control-cards"><div>LIVE STATUS<strong>OFFLINE</strong></div><div>COMMUNITY<strong className="green">ACTIVE</strong></div><div>ACTIVE LINKS<strong>24</strong></div></div></div></div>
-        </div>
-        <div className="control-copy"><div className="section-tag"><span>SYS</span><b>ONLINE / ACESSO RESTRITO</b></div><h2>THENEES<br /><span>CONTROL.</span></h2><p>O painel central para controlar o site, a live, o game, a comunidade e tudo que ainda nem inventamos.</p><a className="locked" href="/control">▣ ADMIN ACCESS <b>ENTRAR →</b></a></div>
       </section>
 
       <footer className="site-footer">
@@ -857,7 +849,7 @@ export default function Home() {
             <section className="media-kit-formats"><span>03 / FORMATOS COMERCIAIS</span><div>{commercialContent.formats.map((format)=><article key={format.title}><b>{format.title}</b><p>{format.description}</p></article>)}</div></section>
             <section className="media-kit-difference"><span>04 / DIFERENCIAL</span><div><h3>{differenceLead}.<br /><em>{differenceAccentParts.join(". ")}</em></h3><p>{commercialContent.differenceText}</p></div></section>
             <section className="media-kit-actions"><div><small>CONTATO COMERCIAL</small><a href={`mailto:${officialLinks.email}`}>{officialLinks.email.toUpperCase()}</a></div><button className="button secondary" type="button" onClick={() => window.print()}>IMPRIMIR / SALVAR PDF <span>↓</span></button><button className="button primary" type="button" onClick={() => { setMediaKitOpen(false); setContactOpen(true); setContactStatus("idle"); }}>SOLICITAR PROPOSTA <span>↗</span></button></section>
-            <p className="media-kit-note">CONTEÚDO E MÉTRICAS GERENCIADOS PELO THENEES CONTROL · FONTES AUTOMÁTICAS SERÃO ATIVADAS COM TWITCH E KICK.</p>
+            <p className="media-kit-note">CONTEÚDO E MÉTRICAS MANTIDOS PELA EQUIPE THENEES.</p>
           </div>
         </section>
       </div>}
