@@ -9,6 +9,20 @@
 
 Para encerrar a prévia, pressione `Ctrl + C` no terminal.
 
+## Publicação automática
+
+O site é publicado automaticamente pelo GitHub Actions após cada envio para
+`main` ou para a branch de produção atual. A configuração inicial exige estes
+segredos no repositório:
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+
+Depois desse cadastro único, o fluxo diário é apenas commit e push. O GitHub
+valida os tipos, executa os testes e publica o site em `thenees.com.br`.
+
 ## Estrutura principal
 
 - `app/page.tsx`: conteúdo e interações da landing page.
