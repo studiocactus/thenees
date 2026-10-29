@@ -48,5 +48,11 @@ test("mantém o produto livre do starter descartado", async () => {
   assert.match(layout, /Thenees — Community Operating System/);
   assert.doesNotMatch(page, /SkeletonPreview|codex-preview/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
-  assert.deepEqual(await readdir(new URL("../app/_sites-preview", import.meta.url)), []);
+  const discardedPreviewFiles = await readdir(
+    new URL("../app/_sites-preview", import.meta.url),
+  ).catch((error) => {
+    if (error?.code === "ENOENT") return [];
+    throw error;
+  });
+  assert.deepEqual(discardedPreviewFiles, []);
 });
